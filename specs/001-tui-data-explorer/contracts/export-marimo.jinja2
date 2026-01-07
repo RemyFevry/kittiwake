@@ -1,0 +1,96 @@
+# /// script
+# requires-python = ">=3.13"
+# dependencies = [
+#     "narwhals>=2.15.0",
+#     "marimo>=0.18.4",
+{% if backend_dependencies %}#     {{ backend_dependencies | join(',\n#     ') }}{% endif %}
+# ]
+# ///
+"""
+{{ analysis_name }}
+
+{{ analysis_description }}
+
+Generated: {{ generated_at }}
+Source Dataset: {{ dataset_path }}
+Operations: {{ operation_count }}
+"""
+
+import marimo
+
+__generated_with__ = "kittiwake {{ kittiwake_version }}"
+
+app = marimo.App()
+
+
+@app.cell
+def __():
+    import marimo as mo
+    import narwhals as nw
+    return mo, nw
+
+
+@app.cell
+def __(mo):
+    mo.md(
+        """
+        # {{ analysis_name }}
+        
+        **Description**: {{ analysis_description if analysis_description else 'No description provided' }}
+        
+        **Generated**: {{ generated_at }}  
+        **Source**: `{{ dataset_path }}`  
+        **Operations**: {{ operation_count }}
+        """
+    )
+    return
+
+
+@app.cell
+def __(nw):
+    # Load dataset
+{% if dataset_path.endswith('.csv') %}
+    df = nw.scan_csv(r"{{ dataset_path }}")
+{% elif dataset_path.endswith('.parquet') %}
+    df = nw.scan_parquet(r"{{ dataset_path }}")
+{% elif dataset_path.endswith('.json') %}
+    df = nw.scan_json(r"{{ dataset_path }}")
+{% else %}
+    # Unknown format, try generic read
+    df = nw.from_native(nw.read_csv(r"{{ dataset_path }}"))
+{% endif %}
+    return df,
+
+
+{% for operation in operations %}
+@app.cell
+def __({% if loop.first %}df{% else %}df_{{ loop.index - 1 }}{% endif %}, nw):
+    # {{ operation.display }}
+    df_{{ loop.index }} = {{ operation.code.replace('df', 'df_' + (loop.index - 1)|string if not loop.first else 'df') }}
+    return df_{{ loop.index }},
+
+{% endfor %}
+
+@app.cell
+def __(mo, df_{{ operations | length if operations else 'df' }}):
+    # Display final results
+    final_df = df_{{ operations | length if operations else 'df' }}
+    mo.ui.table(
+        final_df.collect().to_pandas(),  # Materialize lazy frame
+        selection=None,
+        pagination=True,
+        page_size=100
+    )
+    return final_df,
+
+
+@app.cell
+def __(final_df):
+    # Dataset summary
+    print(f"Rows: {len(final_df.collect())}")
+    print(f"Columns: {final_df.columns}")
+    return
+
+
+if __name__ == "__main__":
+    app.run()
