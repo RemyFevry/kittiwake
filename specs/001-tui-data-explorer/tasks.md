@@ -20,10 +20,10 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create project directory structure: src/kittiwake/{models,widgets,screens,services,utils}/ and tests/{contract,integration,unit}/
-- [ ] T002 Initialize Python project with pyproject.toml dependencies: textual>=7.0.1, narwhals>=2.15.0, typer>=0.9.0, duckdb>=0.10.0, httpx>=0.27.0, nbformat>=5.10.0, jinja2>=3.1.0
-- [ ] T003 [P] Configure ruff linting and formatting in pyproject.toml
-- [ ] T004 [P] Create pytest configuration in pyproject.toml with test paths and pytest-asyncio dependency
+- [X] T001 Create project directory structure: src/kittiwake/{models,widgets,screens,services,utils}/ and tests/{contract,integration,unit}/
+- [X] T002 Initialize Python project with pyproject.toml dependencies: textual>=7.0.1, narwhals>=2.15.0, typer>=0.9.0, duckdb>=0.10.0, httpx>=0.27.0, nbformat>=5.10.0, jinja2>=3.1.0
+- [X] T003 [P] Configure ruff linting and formatting in pyproject.toml
+- [X] T004 [P] Create pytest configuration in pyproject.toml with test paths and pytest-asyncio dependency
 
 ---
 
@@ -33,16 +33,16 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Create CLI entry point with Typer in src/kittiwake/cli.py (bare `kw` command and `kw load` subcommand)
-- [ ] T006 [P] Create main Textual App class in src/kittiwake/app.py with DatasetSession initialization
-- [ ] T007 [P] Implement DatasetSession entity in src/kittiwake/models/dataset.py (manages up to 10 datasets, active dataset tracking, split pane state)
-- [ ] T008 [P] Implement Dataset entity in src/kittiwake/models/dataset.py (with UUID, name, source, backend, frame, schema, operation_history fields)
-- [ ] T009 [P] Implement Operation entity in src/kittiwake/models/operations.py (code, display, operation_type, params storage with to_dict/from_dict/apply/validate methods)
-- [ ] T010 Create async DataLoader service in src/kittiwake/services/data_loader.py (supports CSV/Parquet/JSON from local and HTTP/HTTPS URLs with httpx streaming)
-- [ ] T011 [P] Create NarwhalsOps service in src/kittiwake/services/narwhals_ops.py (get_page function for pagination with narwhals lazy frames)
-- [ ] T012 [P] Setup DuckDB schema initialization in src/kittiwake/services/persistence.py (create analyses.db with saved_analyses table, enable WAL mode)
-- [ ] T013 [P] Create utility for keyboard bindings registry in src/kittiwake/utils/keybindings.py
-- [ ] T014 [P] Create async/worker helper utilities in src/kittiwake/utils/async_helpers.py
+- [X] T005 Create CLI entry point with Typer in src/kittiwake/cli.py (bare `kw` command and `kw load` subcommand)
+- [X] T006 [P] Create main Textual App class in src/kittiwake/app.py with DatasetSession initialization
+- [X] T007 [P] Implement DatasetSession entity in src/kittiwake/models/dataset_session.py (manages up to 10 datasets, active dataset tracking, split pane state)
+- [X] T008 [P] Implement Dataset entity in src/kittiwake/models/dataset.py (with UUID, name, source, backend, frame, schema, operation_history fields)
+- [X] T009 [P] Implement Operation entity in src/kittiwake/models/operations.py (code, display, operation_type, params storage with to_dict/from_dict/apply/validate methods)
+- [X] T010 Create async DataLoader service in src/kittiwake/services/data_loader.py (supports CSV/Parquet/JSON from local and HTTP/HTTPS URLs with httpx streaming)
+- [X] T011 [P] Create NarwhalsOps service in src/kittiwake/services/narwhals_ops.py (get_page function for pagination with narwhals lazy frames)
+- [X] T012 [P] Setup DuckDB schema initialization in src/kittiwake/services/persistence.py (create analyses.db with saved_analyses table, enable WAL mode)
+- [X] T013 [P] Create utility for keyboard bindings registry in src/kittiwake/utils/keybindings.py
+- [X] T014 [P] Create async/worker helper utilities in src/kittiwake/utils/async_helpers.py
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -56,17 +56,17 @@
 
 ### Implementation for User Story 1
 
-- [ ] T015 [P] [US1] Implement DatasetTable widget in src/kittiwake/widgets/dataset_table.py (extends Textual DataTable with pagination support, 500-1000 rows per page)
-- [ ] T016 [P] [US1] Implement DatasetTabs widget in src/kittiwake/widgets/dataset_tabs.py (shows loaded datasets with active one highlighted, keyboard shortcuts for switching)
-- [ ] T017 [P] [US1] Implement HelpOverlay widget in src/kittiwake/widgets/help_overlay.py (keyboard shortcuts help with context-aware bindings from active screen)
-- [ ] T018 [US1] Create MainScreen in src/kittiwake/screens/main_screen.py (primary data exploration screen with DatasetTable, DatasetTabs, status bar, keyboard bindings)
-- [ ] T019 [US1] Implement dataset loading workflow in MainScreen: handle CLI args from `kw load`, load files async with progress indicators
-- [ ] T020 [US1] Add keyboard navigation bindings to MainScreen: arrow keys for data navigation, Tab for dataset switching, ? for help overlay
-- [ ] T021 [US1] Implement split pane mode in MainScreen (keyboard shortcut to display two datasets side-by-side using Textual Horizontal/Vertical containers)
-- [ ] T022 [US1] Add 10-dataset limit enforcement in DatasetSession with user prompts when limit reached
-- [ ] T023 [US1] Implement loading indicators and progress tracking for datasets >500ms load time using Textual reactive variables
-- [ ] T024 [US1] Add error handling for file not found, unsupported formats, network timeouts with clear error messages
-- [ ] T025 [US1] Wire up CLI commands in src/kittiwake/cli.py to launch MainScreen with empty workspace or pre-loaded datasets
+- [X] T015 [P] [US1] Implement DatasetTable widget in src/kittiwake/widgets/dataset_table.py (extends Textual DataTable with pagination support, 500-1000 rows per page)
+- [X] T016 [P] [US1] Implement DatasetTabs widget in src/kittiwake/widgets/dataset_tabs.py (shows loaded datasets with active one highlighted, keyboard shortcuts for switching)
+- [X] T017 [P] [US1] Implement HelpOverlay widget in src/kittiwake/widgets/help_overlay.py (keyboard shortcuts help with context-aware bindings from active screen)
+- [X] T018 [US1] Create MainScreen in src/kittiwake/screens/main_screen.py (primary data exploration screen with DatasetTable, DatasetTabs, status bar, keyboard bindings)
+- [X] T019 [US1] Implement dataset loading workflow in MainScreen: handle CLI args from `kw load`, load files async with progress indicators
+- [X] T020 [US1] Add keyboard navigation bindings to MainScreen: arrow keys for data navigation, Tab for dataset switching, ? for help overlay
+- [X] T021 [US1] Implement split pane mode in MainScreen (keyboard shortcut to display two datasets side-by-side using Textual Horizontal/Vertical containers)
+- [X] T022 [US1] Add 10-dataset limit enforcement in DatasetSession with user prompts when limit reached
+- [X] T023 [US1] Implement loading indicators and progress tracking for datasets >500ms load time using Textual reactive variables
+- [X] T024 [US1] Add error handling for file not found, unsupported formats, network timeouts with clear error messages
+- [X] T025 [US1] Wire up CLI commands in src/kittiwake/cli.py to launch MainScreen with empty workspace or pre-loaded datasets
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - users can load, view, and switch between datasets
 
