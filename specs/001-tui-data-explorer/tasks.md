@@ -305,8 +305,8 @@
   - Create SavedAnalysis entity with current dataset operations
   - Call `SavedAnalysisRepository.save()` in main thread
   - Show success/error notification
-- [ ] T083 Implement `action_load_saved_analysis()` in MainScreen - NEEDS IMPLEMENTATION:
-  - Show SavedAnalysesListScreen
+- [x] T083 ✅ Implement `action_load_saved_analysis()` in MainScreen - COMPLETE 2026-01-10 (main_screen.py:408):
+  - Show SavedAnalysesListScreen (Ctrl+L keybinding)
   - User selects analysis
   - Reload dataset from `dataset_path` (async with progress)
   - Reapply all operations in sequence (respecting execution mode)
