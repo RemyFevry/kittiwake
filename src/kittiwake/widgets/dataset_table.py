@@ -78,9 +78,11 @@ class DatasetTable(Container):
         self.dataset = dataset
         self.current_page = 0
 
-        if dataset.row_count > 0:
+        # Use filtered row count if operations have been applied
+        row_count = dataset.get_filtered_row_count()
+        if row_count > 0:
             self.total_pages = (
-                dataset.row_count + self.page_size - 1
+                row_count + self.page_size - 1
             ) // self.page_size
         else:
             self.total_pages = 1
@@ -151,12 +153,14 @@ class DatasetTable(Container):
             self.status_label.update("")
             return
 
+        # Use filtered row count if operations have been applied
+        row_count = self.dataset.get_filtered_row_count()
         start_row = self.current_page * self.page_size + 1
-        end_row = min((self.current_page + 1) * self.page_size, self.dataset.row_count)
+        end_row = min((self.current_page + 1) * self.page_size, row_count)
 
         status = (
             f"Page {self.current_page + 1}/{self.total_pages} | "
-            f"Rows {start_row:,}-{end_row:,} of {self.dataset.row_count:,} | "
+            f"Rows {start_row:,}-{end_row:,} of {row_count:,} | "
             f"{self.dataset.name}"
         )
         self.status_label.update(status)

@@ -32,6 +32,10 @@ class MainScreen(Screen):
         Binding("ctrl+p", "toggle_split_pane", "Split Pane"),
         Binding("ctrl+f", "filter_data", "Filter"),
         Binding("ctrl+h", "search_data", "Search"),  # Changed from ctrl+slash for French AZERTY Mac compatibility
+        Binding("ctrl+e", "execute_next", "Execute Next"),
+        Binding("ctrl+shift+e", "execute_all", "Execute All"),
+        Binding("ctrl+z", "undo", "Undo"),
+        Binding("ctrl+shift+z", "redo", "Redo"),
         Binding("tab", "next_dataset", "Next Dataset"),
         Binding("shift+tab", "prev_dataset", "Prev Dataset"),
         Binding("page_down", "next_page", "Next Page", show=False),
@@ -58,6 +62,27 @@ class MainScreen(Screen):
         """Return the app instance with proper typing."""
         from ..app import KittiwakeApp  # noqa: F401
         return self.app  # type: ignore[return-value]
+
+    def _get_all_operations(self, dataset) -> list:
+        """Get all operations (executed + queued) for display in sidebar.
+        
+        Returns operations in order: executed operations first, then queued operations.
+        """
+        if not dataset:
+            return []
+        
+        # Combine executed and queued operations
+        all_ops = []
+        
+        # Add executed operations
+        if hasattr(dataset, 'executed_operations'):
+            all_ops.extend(dataset.executed_operations)
+        
+        # Add queued operations
+        if hasattr(dataset, 'queued_operations'):
+            all_ops.extend(dataset.queued_operations)
+        
+        return all_ops
 
     def compose(self) -> ComposeResult:
         """Compose screen UI with sidebar architecture."""
@@ -97,9 +122,9 @@ class MainScreen(Screen):
         active_dataset = self.session.get_active_dataset()
         if active_dataset:
             self.dataset_table_left.load_dataset(active_dataset)
-            # Refresh operations sidebar
+            # Refresh operations sidebar with all operations (executed + queued)
             if self.operations_sidebar:
-                self.operations_sidebar.refresh_operations(active_dataset.operation_history)
+                self.operations_sidebar.refresh_operations(self._get_all_operations(active_dataset))
 
     def watch_split_pane_active(self, active: bool) -> None:
         """React to split pane mode changes."""
@@ -231,9 +256,9 @@ class MainScreen(Screen):
                 if self.split_pane_active and self.dataset_table_right and self.dataset_table_right.dataset == active_dataset:
                     self.dataset_table_right.load_dataset(active_dataset)
 
-                # Refresh operations sidebar
+                # Refresh operations sidebar with all operations (executed + queued)
                 if self.operations_sidebar:
-                    self.operations_sidebar.refresh_operations(active_dataset.operation_history)
+                    self.operations_sidebar.refresh_operations(self._get_all_operations(active_dataset))
 
             except Exception as e:
                 self.kittiwake_app.notify_error(f"Filter operation failed: {e}")
@@ -299,9 +324,9 @@ class MainScreen(Screen):
                 if self.split_pane_active and self.dataset_table_right and self.dataset_table_right.dataset == active_dataset:
                     self.dataset_table_right.load_dataset(active_dataset)
 
-                # Refresh operations sidebar
+                # Refresh operations sidebar with all operations (executed + queued)
                 if self.operations_sidebar:
-                    self.operations_sidebar.refresh_operations(active_dataset.operation_history)
+                    self.operations_sidebar.refresh_operations(self._get_all_operations(active_dataset))
 
             except Exception as e:
                 self.kittiwake_app.notify_error(f"Search operation failed: {e}")
@@ -361,6 +386,163 @@ class MainScreen(Screen):
         """Quit application."""
         self.app.exit()
 
+    def action_execute_next(self) -> None:
+        """Execute next queued operation (Ctrl+E)."""
+        active_dataset = self.session.get_active_dataset()
+        if not active_dataset:
+            self.notify("No active dataset", severity="warning")
+            return
+        
+        # Check if in eager mode
+        if hasattr(active_dataset, 'execution_mode') and active_dataset.execution_mode == "eager":
+            self.notify("No queued operations (eager mode active)", severity="information")
+            return
+        
+        # Check if there are queued operations
+        if not hasattr(active_dataset, 'queued_operations') or not active_dataset.queued_operations:
+            self.notify("No queued operations to execute", severity="information")
+            return
+        
+        # Execute next operation
+        try:
+            success = active_dataset.execute_next_queued()
+            if success:
+                # Refresh table to show updated data
+                if self.dataset_table_left and self.dataset_table_left.dataset == active_dataset:
+                    self.dataset_table_left.load_dataset(active_dataset)
+                if self.split_pane_active and self.dataset_table_right and self.dataset_table_right.dataset == active_dataset:
+                    self.dataset_table_right.load_dataset(active_dataset)
+                
+                # Refresh operations sidebar
+                if self.operations_sidebar:
+                    self.operations_sidebar.refresh_operations(self._get_all_operations(active_dataset))
+                
+                executed_count = len(active_dataset.executed_operations)
+                queued_count = len(active_dataset.queued_operations)
+                self.notify(f"Executed operation (✓ {executed_count}, ⏳ {queued_count} remaining)")
+            else:
+                self.notify("No queued operations to execute", severity="information")
+        except Exception as e:
+            self.kittiwake_app.notify_error(f"Operation execution failed: {e}")
+            # Refresh sidebar to show failed state
+            if self.operations_sidebar:
+                self.operations_sidebar.refresh_operations(self._get_all_operations(active_dataset))
+
+    def action_execute_all(self) -> None:
+        """Execute all queued operations (Ctrl+Shift+E)."""
+        active_dataset = self.session.get_active_dataset()
+        if not active_dataset:
+            self.notify("No active dataset", severity="warning")
+            return
+        
+        # Check if in eager mode
+        if hasattr(active_dataset, 'execution_mode') and active_dataset.execution_mode == "eager":
+            self.notify("No queued operations (eager mode active)", severity="information")
+            return
+        
+        # Check if there are queued operations
+        if not hasattr(active_dataset, 'queued_operations') or not active_dataset.queued_operations:
+            self.notify("No queued operations to execute", severity="information")
+            return
+        
+        # Execute all operations
+        total_queued = len(active_dataset.queued_operations)
+        try:
+            count = active_dataset.execute_all_queued()
+            
+            # Refresh table to show updated data
+            if self.dataset_table_left and self.dataset_table_left.dataset == active_dataset:
+                self.dataset_table_left.load_dataset(active_dataset)
+            if self.split_pane_active and self.dataset_table_right and self.dataset_table_right.dataset == active_dataset:
+                self.dataset_table_right.load_dataset(active_dataset)
+            
+            # Refresh operations sidebar
+            if self.operations_sidebar:
+                self.operations_sidebar.refresh_operations(self._get_all_operations(active_dataset))
+            
+            if count == total_queued:
+                self.notify(f"✓ Executed all {count} operations successfully")
+            else:
+                remaining = len(active_dataset.queued_operations)
+                self.notify(f"Executed {count} of {total_queued} operations ({remaining} failed/remaining)", severity="warning")
+        except Exception as e:
+            self.kittiwake_app.notify_error(f"Operation execution failed: {e}")
+            # Refresh sidebar to show failed state
+            if self.operations_sidebar:
+                self.operations_sidebar.refresh_operations(self._get_all_operations(active_dataset))
+
+    def action_undo(self) -> None:
+        """Undo last executed operation (Ctrl+Z)."""
+        active_dataset = self.session.get_active_dataset()
+        if not active_dataset:
+            self.notify("No active dataset", severity="warning")
+            return
+        
+        # Check if there are operations to undo
+        has_executed = hasattr(active_dataset, 'executed_operations') and active_dataset.executed_operations
+        has_legacy = hasattr(active_dataset, 'operation_history') and active_dataset.operation_history
+        
+        if not has_executed and not has_legacy:
+            self.notify("No operations to undo", severity="information")
+            return
+        
+        # Undo operation
+        try:
+            success = active_dataset.undo()
+            if success:
+                # Refresh table to show updated data
+                if self.dataset_table_left and self.dataset_table_left.dataset == active_dataset:
+                    self.dataset_table_left.load_dataset(active_dataset)
+                if self.split_pane_active and self.dataset_table_right and self.dataset_table_right.dataset == active_dataset:
+                    self.dataset_table_right.load_dataset(active_dataset)
+                
+                # Refresh operations sidebar
+                if self.operations_sidebar:
+                    self.operations_sidebar.refresh_operations(self._get_all_operations(active_dataset))
+                
+                executed_count = len(active_dataset.executed_operations) if has_executed else len(active_dataset.operation_history)
+                redo_count = len(active_dataset.redo_stack) if hasattr(active_dataset, 'redo_stack') else 0
+                self.notify(f"Undone (✓ {executed_count} executed, ↶ {redo_count} can redo)")
+            else:
+                self.notify("Failed to undo operation", severity="error")
+        except Exception as e:
+            self.kittiwake_app.notify_error(f"Undo failed: {e}")
+
+    def action_redo(self) -> None:
+        """Redo previously undone operation (Ctrl+Shift+Z)."""
+        active_dataset = self.session.get_active_dataset()
+        if not active_dataset:
+            self.notify("No active dataset", severity="warning")
+            return
+        
+        # Check if there are operations to redo
+        if not hasattr(active_dataset, 'redo_stack') or not active_dataset.redo_stack:
+            self.notify("No operations to redo", severity="information")
+            return
+        
+        # Redo operation
+        try:
+            success = active_dataset.redo()
+            if success:
+                # Refresh table to show updated data
+                if self.dataset_table_left and self.dataset_table_left.dataset == active_dataset:
+                    self.dataset_table_left.load_dataset(active_dataset)
+                if self.split_pane_active and self.dataset_table_right and self.dataset_table_right.dataset == active_dataset:
+                    self.dataset_table_right.load_dataset(active_dataset)
+                
+                # Refresh operations sidebar
+                if self.operations_sidebar:
+                    self.operations_sidebar.refresh_operations(self._get_all_operations(active_dataset))
+                
+                executed_count = len(active_dataset.executed_operations)
+                redo_count = len(active_dataset.redo_stack)
+                self.notify(f"Redone (✓ {executed_count} executed, ↶ {redo_count} can redo)")
+            else:
+                self.notify("Failed to redo operation", severity="error")
+        except Exception as e:
+            self.kittiwake_app.notify_error(f"Redo failed: {e}")
+
+
     def load_dataset(self, dataset) -> None:
         """Load a dataset into the view.
 
@@ -407,6 +589,8 @@ class MainScreen(Screen):
 
             # Reapply all operations in new order
             for op in active_dataset.operation_history:
+                if active_dataset.current_frame is None:
+                    raise ValueError("Current frame is None, cannot apply operation")
                 active_dataset.current_frame = op.apply(active_dataset.current_frame)
 
             # Refresh table
@@ -449,6 +633,8 @@ class MainScreen(Screen):
 
             # Reapply all remaining operations
             for op in active_dataset.operation_history:
+                if active_dataset.current_frame is None:
+                    raise ValueError("Current frame is None, cannot apply operation")
                 active_dataset.current_frame = op.apply(active_dataset.current_frame)
 
             # Refresh table

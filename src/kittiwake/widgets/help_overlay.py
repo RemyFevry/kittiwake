@@ -115,6 +115,16 @@ class HelpOverlay(ModalScreen):
                     yield Label("Ctrl+Shift+Z", classes="help_key")
                     yield Label("Redo operation", classes="help_desc")
 
+                # Execution section (Lazy Mode)
+                yield Label("Execution (Lazy Mode)", classes="help_section_title")
+                with Grid(classes="help_section"):
+                    yield Label("Ctrl+M", classes="help_key")
+                    yield Label("Toggle execution mode (lazy/eager)", classes="help_desc")
+                    yield Label("Ctrl+E", classes="help_key")
+                    yield Label("Execute next queued operation", classes="help_desc")
+                    yield Label("Ctrl+Shift+E", classes="help_key")
+                    yield Label("Execute all queued operations", classes="help_desc")
+
                 # Operations Sidebar section
                 yield Label("Operations Sidebar", classes="help_section_title")
                 with Grid(classes="help_section"):

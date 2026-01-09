@@ -143,19 +143,20 @@ class FilterModal(ModalScreen[dict | None]):
 
         # Generate code string based on operator
         if operator == "contains":
-            # String contains operation
-            code = f'df.filter(nw.col("{column}").str.contains("{value}"))'
+            # String contains operation - case-insensitive (assignment needed for exec())
+            value_lower = value.lower()
+            code = f'df = df.filter(nw.col("{column}").str.to_lowercase().str.contains("{value_lower}"))'
         else:
             # Comparison operators (==, !=, >, <, >=, <=)
             # Try to detect numeric values
             try:
                 numeric_value = float(value)
-                # Use numeric value without quotes
-                code = f'df.filter(nw.col("{column}") {operator} {numeric_value})'
+                # Use numeric value without quotes (assignment needed for exec())
+                code = f'df = df.filter(nw.col("{column}") {operator} {numeric_value})'
             except ValueError:
-                # String value - use quotes and escape any existing quotes
+                # String value - use quotes and escape any existing quotes (assignment needed for exec())
                 escaped_value = value.replace('"', '\\"')
-                code = f'df.filter(nw.col("{column}") {operator} "{escaped_value}")'
+                code = f'df = df.filter(nw.col("{column}") {operator} "{escaped_value}")'
 
         # Generate human-readable display string
         display = f"Filter: {column} {operator} {value}"

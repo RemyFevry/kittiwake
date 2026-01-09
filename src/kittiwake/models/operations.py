@@ -1,8 +1,8 @@
 """Operation entities for data transformations."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import narwhals as nw
 
@@ -15,13 +15,9 @@ class Operation:
     display: str  # Human-readable description
     operation_type: str  # Type of operation
     params: dict[str, Any]  # Operation parameters
-    id: UUID = None
-
-    def __post_init__(self):
-        if self.id is None:
-            from uuid import uuid4
-
-            self.id = uuid4()
+    id: UUID = field(default_factory=uuid4)
+    state: str = "queued"  # Operation state: "queued" | "executed" | "failed"
+    error_message: str | None = None  # Error message if state is "failed"
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize operation to dict."""
@@ -30,7 +26,16 @@ class Operation:
             "display": self.display,
             "operation_type": self.operation_type,
             "params": self.params,
+            "state": self.state,
         }
+
+    def to_code(self) -> str:
+        """Generate Python code for this operation.
+        
+        Returns the code attribute directly, which is the narwhals expression
+        to be executed. This is used for exporting operations to notebooks.
+        """
+        return self.code
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Operation":
@@ -49,8 +54,8 @@ class Operation:
 
         try:
             namespace = {"df": df, "nw": nw}
-            result = eval(self.code, {"__builtins__": {}}, namespace)
-            return result
+            exec(self.code, {"__builtins__": {}}, namespace)
+            return namespace["df"]
         except Exception as e:
             raise OperationError(f"Failed to apply operation '{self.display}': {e}")
 
@@ -62,7 +67,7 @@ class Operation:
         try:
             # Try on sample data
             sample = df.head(10).collect()
-            lazy_sample = nw.from_native(sample)
+            lazy_sample = nw.from_native(sample).lazy()
             self.apply(lazy_sample)
             return True, None
         except Exception as e:

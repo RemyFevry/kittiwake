@@ -191,8 +191,8 @@ class SearchModal(ModalScreen):
         # Combine with OR operator (|)
         combined_condition = " | ".join(conditions)
 
-        # Build complete filter expression
-        code = f"df.filter({combined_condition})"
+        # Build complete filter expression (assignment needed for exec())
+        code = f"df = df.filter({combined_condition})"
 
         # Human-readable display
         display = f"Search: '{query}'"

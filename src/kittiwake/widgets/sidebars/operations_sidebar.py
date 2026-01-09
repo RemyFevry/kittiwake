@@ -9,10 +9,13 @@ from textual.widgets import Label, ListItem, ListView, Static
 
 
 class OperationsSidebar(Vertical):
-    """Right sidebar showing operations history (push, 25% width).
+    """Right sidebar showing operations (both queued and executed, push, 25% width).
 
     Features:
-    - ListView showing all applied operations
+    - ListView showing all operations with state indicators:
+        - ⏳ for queued operations
+        - ✓ for executed operations
+        - ✗ for failed operations
     - Keyboard actions:
         - Ctrl+Up/Down: Move operation up/down in sequence
         - Enter: Edit selected operation
@@ -22,7 +25,8 @@ class OperationsSidebar(Vertical):
     - Auto-hides when all operations are removed
 
     Usage:
-        sidebar.refresh_operations(dataset.operation_history)
+        all_operations = dataset.executed_operations + dataset.queued_operations
+        sidebar.refresh_operations(all_operations)
     """
 
     show_sidebar = reactive(False)
@@ -39,6 +43,7 @@ class OperationsSidebar(Vertical):
         """Initialize operations sidebar."""
         super().__init__(id="operations_sidebar", classes="sidebar hidden", **kwargs)
         self.operations: list = []
+        self._refresh_counter = 0  # Counter to ensure unique IDs across refreshes
 
     def watch_show_sidebar(self, show: bool) -> None:
         """React to visibility changes."""
@@ -51,7 +56,7 @@ class OperationsSidebar(Vertical):
 
     def compose(self) -> ComposeResult:
         """Create operations sidebar content."""
-        yield Label("Applied Operations", classes="sidebar-title")
+        yield Label("Operations", classes="sidebar-title")
         yield ListView(id="operations_list")
         yield Static("", id="operations_status", classes="sidebar-status")
 
@@ -59,28 +64,57 @@ class OperationsSidebar(Vertical):
         """Update operations list.
 
         Args:
-            operations: List of Operation objects
+            operations: List of Operation objects (both queued and executed)
         """
         self.operations = operations
+        self._refresh_counter += 1  # Increment counter for unique IDs
         operations_list = self.query_one("#operations_list", ListView)
-        operations_list.clear()
+        
+        # Remove all existing items by querying and removing them
+        # This is more reliable than clear() which might be async
+        for child in list(operations_list.children):
+            child.remove()
 
         for idx, op in enumerate(operations):
-            # Display format: "1. Filter: age > 25"
-            display_text = f"{idx + 1}. {op.display}"
+            # Determine operation state styling
+            state_indicator = ""
+            if hasattr(op, 'state'):
+                if op.state == "queued":
+                    state_indicator = "⏳ "  # Hourglass for queued
+                elif op.state == "executed":
+                    state_indicator = "✓ "   # Checkmark for executed
+                elif op.state == "failed":
+                    state_indicator = "✗ "   # X mark for failed
+            
+            # Display format: "⏳ 1. Filter: age > 25" or "✓ 1. Filter: age > 25"
+            display_text = f"{state_indicator}{idx + 1}. {op.display}"
+            
+            # Use refresh counter + index to ensure unique IDs across multiple refreshes
             operations_list.append(
                 ListItem(
                     Static(display_text),
-                    id=f"op_{op.id}",
+                    id=f"op_item_{self._refresh_counter}_{idx}",
                 )
             )
 
         # Update status
         status = self.query_one("#operations_status", Static)
         if operations:
-            status.update(f"{len(operations)} operation{'s' if len(operations) > 1 else ''} applied")
+            queued_count = sum(1 for op in operations if hasattr(op, 'state') and op.state == "queued")
+            executed_count = sum(1 for op in operations if hasattr(op, 'state') and op.state == "executed")
+            failed_count = sum(1 for op in operations if hasattr(op, 'state') and op.state == "failed")
+            
+            status_parts = []
+            if executed_count > 0:
+                status_parts.append(f"{executed_count} executed")
+            if queued_count > 0:
+                status_parts.append(f"{queued_count} queued")
+            if failed_count > 0:
+                status_parts.append(f"{failed_count} failed")
+            
+            status.update(", ".join(status_parts))
         else:
-            status.update("No operations applied")
+            status.update("No operations")
 
         # Auto-show/hide based on operations
         self.show_sidebar = len(operations) > 0
