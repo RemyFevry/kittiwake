@@ -32,6 +32,7 @@ class MainScreen(Screen):
         Binding("a", "aggregate", "Aggregate"),
         Binding("?", "help", "Help"),
         Binding("ctrl+s", "save_analysis", "Save"),
+        Binding("ctrl+l", "load_analysis", "Load"),
         Binding("ctrl+p", "toggle_split_pane", "Split Pane"),
         Binding("ctrl+f", "filter_data", "Filter"),
         Binding("ctrl+h", "search_data", "Search"),  # Changed from ctrl+slash for French AZERTY Mac compatibility
@@ -398,6 +399,98 @@ class MainScreen(Screen):
             SaveAnalysisModal(),
             on_save_modal_result
         )
+
+    def action_load_analysis(self) -> None:
+        """Load a saved analysis (Ctrl+L)."""
+        from ..screens.saved_analyses_list_screen import SavedAnalysesListScreen
+        
+        def on_analyses_screen_result(result: dict | None) -> None:
+            """Handle saved analyses list screen result."""
+            if result is None:
+                return
+            
+            action = result.get("action")
+            analysis = result.get("analysis")
+            
+            if action == "load" and analysis:
+                # Load the analysis
+                self._load_saved_analysis(analysis)
+            elif action == "edit" and analysis:
+                # TODO: Implement edit analysis metadata
+                self.notify("Edit analysis not yet implemented", severity="information")
+        
+        self.app.push_screen(
+            SavedAnalysesListScreen(),
+            on_analyses_screen_result
+        )
+    
+    def _load_saved_analysis(self, analysis: dict) -> None:
+        """Load a saved analysis into the current session.
+        
+        Args:
+            analysis: Analysis data with operations to replay
+        """
+        dataset_path = analysis.get("dataset_path")
+        operations = analysis.get("operations", [])
+        analysis_name = analysis.get("name")
+        
+        if not dataset_path:
+            self.notify("Analysis has no dataset path", severity="error")
+            return
+        
+        # Load dataset asynchronously
+        async def load_and_apply():
+            try:
+                self.notify(f"Loading dataset for '{analysis_name}'...")
+                
+                # Load dataset
+                from ..services.data_loader import DataLoader
+                loader = DataLoader()
+                dataset = await loader.load_from_source(dataset_path)
+                
+                # Add to session
+                self.session.add_dataset(dataset)
+                
+                # Update UI
+                if self.dataset_tabs:
+                    self.dataset_tabs.add_dataset_tab()
+                if self.dataset_table_left:
+                    self.dataset_table_left.load_dataset(dataset)
+                
+                self.notify(f"Loaded dataset: {dataset.name}")
+                
+                # Apply operations
+                if operations:
+                    self.notify(f"Applying {len(operations)} operations...")
+                    
+                    from ..models.operations import Operation
+                    
+                    for op_data in operations:
+                        operation = Operation(
+                            code=op_data.get("code", ""),
+                            display=op_data.get("display", ""),
+                            operation_type=op_data.get("operation_type", ""),
+                            params=op_data.get("params", {}),
+                        )
+                        
+                        # Apply operation
+                        dataset.apply_operation(operation)
+                    
+                    # Refresh table and operations sidebar
+                    if self.dataset_table_left:
+                        self.dataset_table_left.load_dataset(dataset)
+                    if self.operations_sidebar:
+                        self.operations_sidebar.refresh_operations(self._get_all_operations(dataset))
+                    
+                    self.notify(f"✓ Loaded analysis '{analysis_name}' with {len(operations)} operations")
+                else:
+                    self.notify(f"✓ Loaded analysis '{analysis_name}' (no operations)")
+                    
+            except Exception as e:
+                self.kittiwake_app.notify_error(f"Failed to load analysis: {e}")
+        
+        # Run async load
+        self.run_worker(load_and_apply(), exclusive=False)
 
     def action_help(self) -> None:
         """Show help overlay."""
