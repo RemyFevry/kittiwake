@@ -1,7 +1,6 @@
 """Session management for multiple datasets."""
 
 from dataclasses import dataclass, field
-from typing import List, Optional
 from uuid import UUID
 
 from .dataset import Dataset
@@ -11,11 +10,11 @@ from .dataset import Dataset
 class DatasetSession:
     """Manages collection of loaded datasets."""
 
-    datasets: List[Dataset] = field(default_factory=list)
-    active_dataset_id: Optional[UUID] = None
+    datasets: list[Dataset] = field(default_factory=list)
+    active_dataset_id: UUID | None = None
     max_datasets: int = 10
     split_pane_enabled: bool = False
-    split_pane_datasets: Optional[tuple[UUID, UUID]] = None
+    split_pane_datasets: tuple[UUID, UUID] | None = None
 
     def add_dataset(self, dataset: Dataset) -> bool:
         """Add dataset to session."""
@@ -70,14 +69,14 @@ class DatasetSession:
 
         raise KeyError(f"Dataset {dataset_id} not found in session")
 
-    def get_active_dataset(self) -> Optional[Dataset]:
+    def get_active_dataset(self) -> Dataset | None:
         """Get currently active dataset."""
         for dataset in self.datasets:
             if dataset.is_active:
                 return dataset
         return None
 
-    def get_dataset_by_id(self, dataset_id: UUID) -> Optional[Dataset]:
+    def get_dataset_by_id(self, dataset_id: UUID) -> Dataset | None:
         """Get dataset by ID."""
         for dataset in self.datasets:
             if dataset.id == dataset_id:

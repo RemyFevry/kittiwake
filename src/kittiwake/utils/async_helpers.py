@@ -1,7 +1,7 @@
 """Async and worker utilities for Textual."""
 
-from typing import Any, Callable, Coroutine
 import asyncio
+from collections.abc import Callable, Coroutine
 from functools import wraps
 
 

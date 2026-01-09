@@ -2,8 +2,8 @@
 
 from textual.app import ComposeResult
 from textual.containers import Container
-from textual.widgets import DataTable, Label, Static
 from textual.reactive import reactive
+from textual.widgets import DataTable, Label
 
 from ..models.dataset import Dataset
 
@@ -24,11 +24,11 @@ class DatasetTable(Container):
         height: 1fr;
         layout: vertical;
     }
-    
+
     DatasetTable > DataTable {
         height: 1fr;
     }
-    
+
     DatasetTable > Label {
         height: auto;
         padding: 0 1;

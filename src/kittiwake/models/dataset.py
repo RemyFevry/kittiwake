@@ -1,8 +1,9 @@
 """Dataset entity for managing loaded data and operations."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID, uuid4
+
 import narwhals as nw
 
 from .operations import Operation, OperationError
@@ -16,15 +17,15 @@ class Dataset:
     name: str = ""
     source: str = ""
     backend: str = ""
-    frame: Optional[nw.LazyFrame] = None
-    original_frame: Optional[nw.LazyFrame] = None  # Keep original for reset
-    schema: Dict[str, str] = field(default_factory=dict)
+    frame: nw.LazyFrame | None = None
+    original_frame: nw.LazyFrame | None = None  # Keep original for reset
+    schema: dict[str, str] = field(default_factory=dict)
     row_count: int = 0
     is_active: bool = False
     is_lazy: bool = True
-    operation_history: List[Operation] = field(default_factory=list)
-    current_frame: Optional[nw.LazyFrame] = None
-    checkpoints: Dict[int, nw.LazyFrame] = field(default_factory=dict)
+    operation_history: list[Operation] = field(default_factory=list)
+    current_frame: nw.LazyFrame | None = None
+    checkpoints: dict[int, nw.LazyFrame] = field(default_factory=dict)
     checkpoint_interval: int = 10
 
     def apply_operation(self, operation: Operation) -> None:
@@ -85,7 +86,7 @@ class Dataset:
         # For now, we don't store undo stack
         return False
 
-    def get_page(self, page_num: int, page_size: int = 500) -> Optional[nw.DataFrame]:
+    def get_page(self, page_num: int, page_size: int = 500) -> nw.DataFrame | None:
         """Get a page of data for display."""
         from ..services.narwhals_ops import NarwhalsOps
 
@@ -96,7 +97,7 @@ class Dataset:
 
         return NarwhalsOps.get_page(frame, page_num, page_size)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize dataset metadata."""
         return {
             "name": self.name,

@@ -1,11 +1,9 @@
 """Service for loading datasets from files and URLs."""
 
-import asyncio
 from pathlib import Path
-from typing import Optional
 from uuid import uuid4
-import httpx
 
+import httpx
 import narwhals as nw
 
 from ..models.dataset import Dataset
@@ -79,14 +77,14 @@ class DataLoader:
 
     async def _download_file(self, url: str, timeout: float = 30.0) -> Path:
         """Download file from URL to cache.
-        
+
         Args:
             url: URL to download
             timeout: Request timeout in seconds (default: 30)
-            
+
         Returns:
             Path to downloaded file
-            
+
         Raises:
             httpx.TimeoutException: If request times out
             httpx.HTTPStatusError: If HTTP error occurs
@@ -122,7 +120,7 @@ class DataLoader:
 
         # Determine file type and load accordingly
         suffix = file_path.suffix.lower()
-        
+
         # Get backend module for narwhals
         backend = self._get_backend_module()
 
@@ -150,7 +148,7 @@ class DataLoader:
 
     def detect_backend(self) -> str:
         """Detect available backend library.
-        
+
         Returns:
             String name of available backend ('polars', 'pandas', 'pyarrow', or 'unknown')
         """
@@ -167,13 +165,13 @@ class DataLoader:
                     return "pyarrow"
                 except ImportError:
                     return "unknown"
-    
+
     def _get_backend_module(self):
         """Get the actual backend module for narwhals.
-        
+
         Returns:
             The backend module (polars, pandas, or pyarrow)
-            
+
         Raises:
             ImportError: If no backend is available
         """

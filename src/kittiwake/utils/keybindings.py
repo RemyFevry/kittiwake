@@ -1,6 +1,5 @@
 """Centralized keyboard shortcuts registry."""
 
-from typing import Dict, List, Tuple
 
 
 class KeybindingsRegistry:
@@ -39,7 +38,7 @@ class KeybindingsRegistry:
         "ctrl+p": "split_pane",
     }
 
-    def get_bindings(self, screen: str = "main") -> Dict[str, str]:
+    def get_bindings(self, screen: str = "main") -> dict[str, str]:
         """Get bindings for specific screen."""
         bindings = self.GLOBAL_BINDINGS.copy()
 
@@ -48,7 +47,7 @@ class KeybindingsRegistry:
 
         return bindings
 
-    def get_help_text(self, screen: str = "main") -> List[Tuple[str, str]]:
+    def get_help_text(self, screen: str = "main") -> list[tuple[str, str]]:
         """Get help text for screen."""
         bindings = self.get_bindings(screen)
 

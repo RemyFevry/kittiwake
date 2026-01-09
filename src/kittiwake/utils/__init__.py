@@ -1,7 +1,7 @@
 """Kittiwake utilities."""
 
+from .async_helpers import ProgressTracker, async_to_worker, run_in_executor
 from .keybindings import KeybindingsRegistry
-from .async_helpers import async_to_worker, run_in_executor, ProgressTracker
 
 __all__ = [
     "KeybindingsRegistry",

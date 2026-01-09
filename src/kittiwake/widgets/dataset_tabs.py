@@ -2,9 +2,9 @@
 
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal
-from textual.widgets import Button, Label
-from textual.reactive import reactive
 from textual.message import Message
+from textual.reactive import reactive
+from textual.widgets import Button, Label
 
 from ..models.dataset_session import DatasetSession
 
@@ -26,17 +26,17 @@ class DatasetTabs(Container):
         background: $panel;
         padding: 1;
     }
-    
+
     DatasetTabs Horizontal {
         height: auto;
         width: 1fr;
     }
-    
+
     DatasetTabs Label {
         padding: 0 1;
         width: auto;
     }
-    
+
     DatasetTabs Button {
         margin: 0 1;
     }

@@ -4,7 +4,6 @@ Simplified Kittiwake CLI entry point.
 """
 
 import sys
-from pathlib import Path
 
 
 # Simple CLI for testing

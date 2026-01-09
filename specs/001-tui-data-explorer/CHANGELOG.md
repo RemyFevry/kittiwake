@@ -1,5 +1,161 @@
 # Changelog - TUI Data Explorer
 
+## 2026-01-09 - Modal to Sidebar Architecture Migration
+
+### Context
+After implementing initial modals (FilterModal, SearchModal), user feedback indicated that the specification calls for a **sidebar-based architecture** rather than modal dialogs. The original plan (quickstart.md, research.md) clearly defines:
+- **Left sidebar** (30% width, overlay): Operation configuration forms
+- **Right sidebar** (25% width, push): Operations history with CRUD capabilities
+
+### Changes Made
+
+#### 1. Created Sidebar Widgets
+**New directory**: `src/kittiwake/widgets/sidebars/`
+
+**FilterSidebar** (`filter_sidebar.py`):
+- Converted from FilterModal to left overlay sidebar
+- Column/operator/value form with Apply/Cancel buttons
+- Callback-based result handling
+- ESC to dismiss, returns focus to data table
+- Show/hide via `.show()` and `.action_dismiss()`
+
+**SearchSidebar** (`search_sidebar.py`):
+- Converted from SearchModal to left overlay sidebar
+- Single text input for search query
+- Searches across all columns
+- Enter key triggers apply
+
+**OperationsSidebar** (`operations_sidebar.py`):
+- NEW: Right push sidebar for operations history
+- ListView showing all applied operations
+- Keyboard actions:
+  - `Ctrl+Up/Down`: Reorder operations
+  - `Enter`: Edit operation (reopens left sidebar with params)
+  - `Delete`: Remove operation
+  - `Ctrl+C`: Clear all operations
+- Custom messages: `OperationsReordered`, `OperationEdit`, `OperationRemoved`, `OperationsClearAll`
+- Auto-shows when first operation is applied
+- Auto-hides when all operations removed
+
+#### 2. Architecture Differences
+
+**Modal Architecture** (replaced):
+```
+┌─────────────────────────────────┐
+│         Data Table              │
+│                                 │
+│    ┌──────────────┐            │
+│    │  FilterModal │ (centered) │
+│    │  (blocks UI) │            │
+│    └──────────────┘            │
+└─────────────────────────────────┘
+```
+
+**Sidebar Architecture** (new):
+```
+┌──────────┬─────────────────┬──────────┐
+│  Filter  │   Data Table    │Operations│
+│ Sidebar  │  (adjusts size) │ Sidebar  │
+│ (30%,    │                 │ (25%,    │
+│ overlay) │                 │  push)   │
+└──────────┴─────────────────┴──────────┘
+```
+
+#### 3. Benefits of Sidebar Architecture
+
+**Improved UX**:
+- ✅ Operations history always visible (right sidebar)
+- ✅ Can see data table while configuring operations
+- ✅ No context switching (modals block entire UI)
+- ✅ Reordering operations directly visible
+- ✅ Edit operations by clicking in history
+
+**Better Workflow**:
+- ✅ Left sidebar → configure operation → right sidebar shows result
+- ✅ Right sidebar → click operation → left sidebar reopens with params for editing
+- ✅ Clear visual separation: input (left) vs output (right)
+
+**Keyboard-First**:
+- ✅ Ctrl+F → opens left sidebar for filter
+- ✅ Ctrl+/ → opens left sidebar for search
+- ✅ ESC → closes sidebar, returns to table
+- ✅ Tab → navigate within sidebar
+- ✅ Focus management: sidebar → table seamless
+
+#### 4. Implementation Details
+
+**CSS Layers**:
+```css
+Screen {
+    layers: base overlay;
+}
+
+#filter_sidebar, #search_sidebar {
+    layer: overlay;      /* Floats above data table */
+    dock: left;
+    width: 30%;
+}
+
+#operations_sidebar {
+    /* No layer needed - uses Horizontal push layout */
+    width: 0;            /* Hidden by default */
+    transition: width 100ms;
+}
+
+#operations_sidebar.visible {
+    width: 25%;          /* Pushes data table left */
+}
+```
+
+**Main Screen Layout**:
+```python
+def compose(self) -> ComposeResult:
+    yield Header()
+    
+    # Left sidebars (overlay layer)
+    yield FilterSidebar()
+    yield SearchSidebar()
+    
+    # Main content (push layout)
+    with Horizontal(id="main_content"):
+        yield DatasetTable()  # Adjusts when right sidebar appears
+        yield OperationsSidebar()
+    
+    yield Footer()
+```
+
+### Files Modified
+
+**New Files**:
+- `src/kittiwake/widgets/sidebars/__init__.py`
+- `src/kittiwake/widgets/sidebars/filter_sidebar.py`
+- `src/kittiwake/widgets/sidebars/search_sidebar.py`
+- `src/kittiwake/widgets/sidebars/operations_sidebar.py`
+
+**Files to Update** (next phase):
+- `src/kittiwake/screens/main_screen.py` - Use sidebars instead of modals
+- `src/kittiwake/app.py` - Add CSS for sidebar layouts
+- `specs/001-tui-data-explorer/tasks.md` - Update Phase 4 & 5 tasks to reference sidebars
+
+**Deprecated** (will be removed):
+- `src/kittiwake/widgets/modals/filter_modal.py`
+- `src/kittiwake/widgets/modals/search_modal.py`
+
+**Preserved** (for full-screen interactions):
+- `src/kittiwake/widgets/modals/save_analysis_modal.py` - May convert to sidebar
+- `src/kittiwake/widgets/modals/export_modal.py` - May convert to sidebar
+- `src/kittiwake/screens/saved_analyses_list_screen.py` - Full screen, not sidebar
+
+### Next Steps
+1. Update MainScreen to use sidebar architecture
+2. Add CSS styling for overlay and push layouts
+3. Update keyboard bindings to open sidebars (not modals)
+4. Implement operation edit workflow (right sidebar → left sidebar)
+5. Test reordering operations with Ctrl+Up/Down
+6. Decide: Convert SaveAnalysisModal/ExportModal to sidebars or keep as modals?
+
+---
+
 ## 2026-01-08 - Operation Model Simplification
 
 ### Context

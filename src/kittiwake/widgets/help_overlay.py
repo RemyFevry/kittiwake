@@ -2,8 +2,8 @@
 
 from textual.app import ComposeResult
 from textual.containers import Container, Grid, VerticalScroll
-from textual.widgets import Static, Label
 from textual.screen import ModalScreen
+from textual.widgets import Label, Static
 
 from ..utils.keybindings import KeybindingsRegistry
 

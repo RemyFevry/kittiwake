@@ -1,8 +1,9 @@
 """Operation entities for data transformations."""
 
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 from uuid import UUID
+
 import narwhals as nw
 
 
@@ -13,7 +14,7 @@ class Operation:
     code: str  # Narwhals expression code
     display: str  # Human-readable description
     operation_type: str  # Type of operation
-    params: Dict[str, Any]  # Operation parameters
+    params: dict[str, Any]  # Operation parameters
     id: UUID = None
 
     def __post_init__(self):
@@ -22,7 +23,7 @@ class Operation:
 
             self.id = uuid4()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Serialize operation to dict."""
         return {
             "code": self.code,
@@ -32,7 +33,7 @@ class Operation:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Operation":
+    def from_dict(cls, data: dict[str, Any]) -> "Operation":
         """Deserialize operation from dict."""
         return cls(
             code=data["code"],
@@ -53,7 +54,7 @@ class Operation:
         except Exception as e:
             raise OperationError(f"Failed to apply operation '{self.display}': {e}")
 
-    def validate(self, df: nw.LazyFrame) -> Tuple[bool, Optional[str]]:
+    def validate(self, df: nw.LazyFrame) -> tuple[bool, str | None]:
         """Validate operation against schema."""
         if df is None:
             return False, "Dataframe is None"

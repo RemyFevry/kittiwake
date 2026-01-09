@@ -1,7 +1,7 @@
 """Kittiwake TUI Data Explorer."""
 
-from .models import DatasetSession
 from .app import KittiwakeApp
+from .models import DatasetSession
 
 
 def main() -> None:

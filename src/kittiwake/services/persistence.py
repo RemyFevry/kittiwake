@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 from threading import Lock
-from typing import List, Optional, Dict, Any
+from typing import Any
 
 try:
     import duckdb
@@ -58,7 +58,7 @@ class SavedAnalysisRepository:
         conn.execute("PRAGMA journal_mode=WAL")
         return conn
 
-    def save(self, analysis_data: Dict[str, Any]) -> int:
+    def save(self, analysis_data: dict[str, Any]) -> int:
         """Save analysis to database."""
         with self._write_lock:
             conn = self._get_connection()
@@ -81,7 +81,7 @@ class SavedAnalysisRepository:
             conn.close()
             return result[0] if result else None
 
-    def list_all(self) -> List[Dict[str, Any]]:
+    def list_all(self) -> list[dict[str, Any]]:
         """List all saved analyses."""
         conn = self._get_connection()
 
@@ -106,7 +106,7 @@ class SavedAnalysisRepository:
             for row in result
         ]
 
-    def load_by_id(self, analysis_id: int) -> Optional[Dict[str, Any]]:
+    def load_by_id(self, analysis_id: int) -> dict[str, Any] | None:
         """Load analysis by ID."""
         conn = self._get_connection()
 
@@ -135,7 +135,7 @@ class SavedAnalysisRepository:
             "operations": json.loads(result[7]),
         }
 
-    def update(self, analysis_id: int, analysis_data: Dict[str, Any]) -> bool:
+    def update(self, analysis_id: int, analysis_data: dict[str, Any]) -> bool:
         """Update analysis."""
         with self._write_lock:
             conn = self._get_connection()
