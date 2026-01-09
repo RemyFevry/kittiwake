@@ -1,11 +1,15 @@
 """Export modal widget for exporting analyses to various formats."""
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from textual.app import ComposeResult
 from textual.containers import Container, Horizontal, Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Label, RadioButton, RadioSet, Static
+
+if TYPE_CHECKING:
+    from ...app import KittiwakeApp
 
 
 class ExportModal(ModalScreen[dict | None]):
@@ -59,6 +63,12 @@ class ExportModal(ModalScreen[dict | None]):
         super().__init__(**kwargs)
         self.analysis_name = analysis_name
         self.default_format = default_format if default_format in self.EXPORT_FORMATS else "marimo"
+
+    @property
+    def kittiwake_app(self) -> "KittiwakeApp":
+        """Return the app instance with proper typing."""
+        from ...app import KittiwakeApp  # noqa: F401
+        return self.app  # type: ignore[return-value]
 
     def compose(self) -> ComposeResult:
         """Create export modal content."""
@@ -180,7 +190,7 @@ class ExportModal(ModalScreen[dict | None]):
                 )
 
         except Exception as e:
-            self.notify(f"Invalid path: {e}", severity="error")
+            self.kittiwake_app.notify_error(f"Invalid path: {e}")
             return
 
         # Return export data

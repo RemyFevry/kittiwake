@@ -1,5 +1,7 @@
 """Main screen for data exploration."""
 
+from typing import TYPE_CHECKING
+
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
@@ -12,6 +14,9 @@ from ..models.operations import Operation
 from ..utils.keybindings import KeybindingsRegistry
 from ..widgets import DatasetTable, DatasetTabs, HelpOverlay
 from ..widgets.sidebars import FilterSidebar, OperationsSidebar, SearchSidebar
+
+if TYPE_CHECKING:
+    from ..app import KittiwakeApp
 
 
 class MainScreen(Screen):
@@ -47,6 +52,12 @@ class MainScreen(Screen):
         self.filter_sidebar: FilterSidebar | None = None
         self.search_sidebar: SearchSidebar | None = None
         self.operations_sidebar: OperationsSidebar | None = None
+
+    @property
+    def kittiwake_app(self) -> "KittiwakeApp":
+        """Return the app instance with proper typing."""
+        from ..app import KittiwakeApp  # noqa: F401
+        return self.app  # type: ignore[return-value]
 
     def compose(self) -> ComposeResult:
         """Compose screen UI with sidebar architecture."""
@@ -184,7 +195,7 @@ class MainScreen(Screen):
 
         # Get column names from the dataset
         if not active_dataset.schema:
-            self.notify("Dataset schema not available", severity="error")
+            self.kittiwake_app.notify_error("Dataset schema not available")
             return
 
         columns = list(active_dataset.schema.keys())
@@ -225,7 +236,7 @@ class MainScreen(Screen):
                     self.operations_sidebar.refresh_operations(active_dataset.operation_history)
 
             except Exception as e:
-                self.notify(f"Filter operation failed: {e}", severity="error")
+                self.kittiwake_app.notify_error(f"Filter operation failed: {e}")
 
         # Show filter sidebar
         if self.filter_sidebar:
@@ -293,7 +304,7 @@ class MainScreen(Screen):
                     self.operations_sidebar.refresh_operations(active_dataset.operation_history)
 
             except Exception as e:
-                self.notify(f"Search operation failed: {e}", severity="error")
+                self.kittiwake_app.notify_error(f"Search operation failed: {e}")
 
         # Show search sidebar
         if self.search_sidebar:
@@ -405,7 +416,7 @@ class MainScreen(Screen):
             self.notify("Operations reordered and reapplied")
 
         except Exception as e:
-            self.notify(f"Failed to reapply operations: {e}", severity="error")
+            self.kittiwake_app.notify_error(f"Failed to reapply operations: {e}")
 
     def on_operations_sidebar_operation_edit(
         self, message: OperationsSidebar.OperationEdit
@@ -451,7 +462,7 @@ class MainScreen(Screen):
             self.notify(f"Removed: {message.operation.display}")
 
         except Exception as e:
-            self.notify(f"Failed to reapply operations: {e}", severity="error")
+            self.kittiwake_app.notify_error(f"Failed to reapply operations: {e}")
 
     def on_operations_sidebar_operations_clear_all(
         self, message: OperationsSidebar.OperationsClearAll

@@ -1,7 +1,7 @@
 """Saved analyses list screen for managing saved analyses."""
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from textual.app import ComposeResult
 from textual.binding import Binding
@@ -10,6 +10,9 @@ from textual.screen import Screen
 from textual.widgets import DataTable, Footer, Header, Static
 
 from ..services.persistence import SavedAnalysisRepository
+
+if TYPE_CHECKING:
+    from ..app import KittiwakeApp
 
 
 class SavedAnalysesListScreen(Screen):
@@ -75,6 +78,12 @@ class SavedAnalysesListScreen(Screen):
         self.repository = SavedAnalysisRepository()
         self.analyses_data: list[dict[str, Any]] = []
         self.selected_row_key: int | None = None
+
+    @property
+    def kittiwake_app(self) -> "KittiwakeApp":
+        """Return the app instance with proper typing."""
+        from ..app import KittiwakeApp  # noqa: F401
+        return self.app  # type: ignore[return-value]
 
     def compose(self) -> ComposeResult:
         """Compose screen UI."""
@@ -145,7 +154,7 @@ class SavedAnalysesListScreen(Screen):
 
         except Exception as e:
             status.update(f"Error loading analyses: {e}")
-            self.notify(f"Failed to load analyses: {e}", severity="error")
+            self.kittiwake_app.notify_error(f"Failed to load analyses: {e}")
 
     def _format_datetime(self, dt: Any) -> str:
         """Format datetime for display."""
@@ -196,7 +205,7 @@ class SavedAnalysesListScreen(Screen):
             self.dismiss({"action": "load", "analysis": full_analysis})
 
         except Exception as e:
-            self.notify(f"Failed to load analysis: {e}", severity="error")
+            self.kittiwake_app.notify_error(f"Failed to load analysis: {e}")
 
     def action_edit_analysis(self) -> None:
         """Edit selected analysis metadata (name/description)."""
@@ -234,7 +243,7 @@ class SavedAnalysesListScreen(Screen):
                 )
 
         except Exception as e:
-            self.notify(f"Error deleting analysis: {e}", severity="error")
+            self.kittiwake_app.notify_error(f"Error deleting analysis: {e}")
 
     def action_export_analysis(self) -> None:
         """Export selected analysis to code."""
