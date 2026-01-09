@@ -143,6 +143,27 @@ class DataLoader:
             import pandas as pd
             df = pd.read_excel(str(file_path))
             return nw.from_native(df, eager_only=False).lazy()
+        elif suffix == ".db":
+            # DuckDB files - load using DuckDB connection
+            try:
+                import duckdb
+                # Connect to DuckDB file and scan all tables
+                # For now, we'll scan the first table found
+                conn = duckdb.connect(str(file_path), read_only=True)
+                tables = conn.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='main'").fetchall()
+                
+                if not tables:
+                    raise ValueError(f"No tables found in DuckDB file: {path}")
+                
+                table_name = tables[0][0]
+                # Use DuckDB to read and convert to backend format
+                df = conn.execute(f"SELECT * FROM {table_name}").df()
+                conn.close()
+                
+                # Convert to lazy frame
+                return nw.from_native(df, eager_only=False).lazy()
+            except ImportError:
+                raise ValueError("DuckDB is required to read .db files. Install with: pip install duckdb")
         else:
             raise ValueError(f"Unsupported file format: {suffix}")
 
