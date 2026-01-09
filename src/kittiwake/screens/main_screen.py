@@ -680,7 +680,6 @@ class MainScreen(Screen):
         Args:
             message: QuickFilterRequested message with filter data
         """
-        from ..models.operation import Operation
         from ..widgets.modals.filter_modal import FilterModal
         
         active_dataset = self.session.get_active_dataset()
