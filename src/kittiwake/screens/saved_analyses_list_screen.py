@@ -26,7 +26,7 @@ class SavedAnalysesListScreen(Screen):
         - Enter: Load analysis
         - E: Update (edit) analysis
         - Delete: Delete analysis with confirmation
-        - Ctrl+E: Export analysis
+        - X: Export analysis
     - Returns to main screen with selected analysis or None
     """
 
@@ -34,7 +34,7 @@ class SavedAnalysesListScreen(Screen):
         Binding("enter", "load_analysis", "Load", priority=True),
         Binding("e", "edit_analysis", "Edit"),
         Binding("delete", "delete_analysis", "Delete"),
-        Binding("ctrl+e", "export_analysis", "Export"),
+        Binding("x", "export_analysis", "Export"),
         Binding("escape", "cancel", "Cancel"),
         Binding("q", "cancel", "Back"),
     ]
@@ -150,7 +150,7 @@ class SavedAnalysesListScreen(Screen):
 
             status.update(
                 f"Showing {len(self.analyses_data)} saved analyses. "
-                "Press Enter to load, E to edit, Delete to remove."
+                "Press Enter to load, E to edit, X to export, Delete to remove."
             )
 
         except Exception as e:
