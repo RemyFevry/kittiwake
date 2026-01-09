@@ -132,6 +132,57 @@ def get_operators_for_type(type_category: TypeCategory) -> list[str]:
     return TYPE_OPERATORS.get(type_category, TYPE_OPERATORS["unknown"])
 
 
+def map_operator_to_symbol(operator_display: str) -> str:
+    """Map human-readable operator to Python/narwhals operator symbol.
+    
+    Args:
+        operator_display: Display operator string (e.g., "equals (=)", "contains")
+        
+    Returns:
+        Operator symbol for code generation (e.g., "==", "contains")
+        
+    Examples:
+        >>> map_operator_to_symbol("equals (=)")
+        '=='
+        >>> map_operator_to_symbol("contains")
+        'contains'
+        >>> map_operator_to_symbol("greater than (>)")
+        '>'
+    """
+    # Mapping from display names to symbols
+    operator_map = {
+        # Numeric operators
+        "equals (=)": "==",
+        "not equals (!=)": "!=",
+        "greater than (>)": ">",
+        "less than (<)": "<",
+        "greater than or equal (>=)": ">=",
+        "less than or equal (<=)": "<=",
+        
+        # Text operators
+        "equals": "==",
+        "not equals": "!=",
+        "contains": "contains",
+        "not contains": "not contains",
+        "starts with": "starts with",
+        "ends with": "ends with",
+        
+        # Date operators (same as numeric for comparison)
+        "before (<)": "<",
+        "after (>)": ">",
+        "on or before (<=)": "<=",
+        "on or after (>=)": ">=",
+        
+        # Boolean operators (special cases)
+        "is true": "is true",
+        "is false": "is false",
+        "is null": "is null",
+        "is not null": "is not null",
+    }
+    
+    return operator_map.get(operator_display, operator_display)
+
+
 def terminal_supports_unicode() -> bool:
     """Detect if terminal supports Unicode emoji rendering.
     

@@ -680,6 +680,7 @@ class MainScreen(Screen):
         Args:
             message: QuickFilterRequested message with filter data
         """
+        from ..utils.type_colors import map_operator_to_symbol
         from ..widgets.modals.filter_modal import FilterModal
         
         active_dataset = self.session.get_active_dataset()
@@ -687,6 +688,9 @@ class MainScreen(Screen):
             return
         
         filter_data = message.filter_data
+        
+        # Map display operator to symbol (e.g., "equals (=)" -> "==")
+        filter_data["operator"] = map_operator_to_symbol(filter_data["operator"])
         
         # Build operation using FilterModal helper
         # (This could be moved to a service class in the future)
@@ -720,4 +724,5 @@ class MainScreen(Screen):
                 
         except Exception as e:
             self.kittiwake_app.notify_error(f"Quick filter failed: {e}")
+
 

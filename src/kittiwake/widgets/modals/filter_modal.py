@@ -139,27 +139,67 @@ class FilterModal(ModalScreen[dict | None]):
         """
         column = filter_dict["column"]
         operator = filter_dict["operator"]
-        value = filter_dict["value"]
+        value = filter_dict.get("value", "")
 
         # Generate code string based on operator
         if operator == "contains":
-            # String contains operation - case-insensitive (assignment needed for exec())
+            # String contains operation - case-insensitive
             value_lower = value.lower()
             code = f'df = df.filter(nw.col("{column}").str.to_lowercase().str.contains("{value_lower}"))'
+            display = f"Filter: {column} contains {value}"
+            
+        elif operator == "not contains":
+            # String not contains operation - case-insensitive
+            value_lower = value.lower()
+            code = f'df = df.filter(~nw.col("{column}").str.to_lowercase().str.contains("{value_lower}"))'
+            display = f"Filter: {column} not contains {value}"
+            
+        elif operator == "starts with":
+            # String starts with operation - case-insensitive
+            value_lower = value.lower()
+            code = f'df = df.filter(nw.col("{column}").str.to_lowercase().str.starts_with("{value_lower}"))'
+            display = f"Filter: {column} starts with {value}"
+            
+        elif operator == "ends with":
+            # String ends with operation - case-insensitive
+            value_lower = value.lower()
+            code = f'df = df.filter(nw.col("{column}").str.to_lowercase().str.ends_with("{value_lower}"))'
+            display = f"Filter: {column} ends with {value}"
+            
+        elif operator == "is true":
+            # Boolean true check
+            code = f'df = df.filter(nw.col("{column}") == True)'
+            display = f"Filter: {column} is true"
+            
+        elif operator == "is false":
+            # Boolean false check
+            code = f'df = df.filter(nw.col("{column}") == False)'
+            display = f"Filter: {column} is false"
+            
+        elif operator == "is null":
+            # Null check
+            code = f'df = df.filter(nw.col("{column}").is_null())'
+            display = f"Filter: {column} is null"
+            
+        elif operator == "is not null":
+            # Not null check
+            code = f'df = df.filter(~nw.col("{column}").is_null())'
+            display = f"Filter: {column} is not null"
+            
         else:
             # Comparison operators (==, !=, >, <, >=, <=)
             # Try to detect numeric values
             try:
                 numeric_value = float(value)
-                # Use numeric value without quotes (assignment needed for exec())
+                # Use numeric value without quotes
                 code = f'df = df.filter(nw.col("{column}") {operator} {numeric_value})'
             except ValueError:
-                # String value - use quotes and escape any existing quotes (assignment needed for exec())
+                # String value - use quotes and escape any existing quotes
                 escaped_value = value.replace('"', '\\"')
                 code = f'df = df.filter(nw.col("{column}") {operator} "{escaped_value}")'
-
-        # Generate human-readable display string
-        display = f"Filter: {column} {operator} {value}"
+            
+            # Display string
+            display = f"Filter: {column} {operator} {value}"
 
         # Return params for potential editing later
         params = filter_dict.copy()
