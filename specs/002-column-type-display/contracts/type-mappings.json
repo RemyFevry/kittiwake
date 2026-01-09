@@ -1,0 +1,138 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://kittiwake.dev/schemas/type-mappings.json",
+  "title": "Column Type Mappings",
+  "description": "Defines the mapping from narwhals data types to visual indicators (color, icon) and available filter operators for the Kittiwake TUI data explorer.",
+  "type": "object",
+  "required": ["version", "type_mappings"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the type mappings configuration"
+    },
+    "type_mappings": {
+      "type": "array",
+      "description": "Array of type category mappings",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": [
+          "type_category",
+          "narwhals_dtypes",
+          "color_variable",
+          "icon_ascii",
+          "icon_unicode",
+          "filter_operators"
+        ],
+        "properties": {
+          "type_category": {
+            "type": "string",
+            "enum": ["numeric", "text", "date", "boolean", "unknown"],
+            "description": "Visual category identifier for this data type grouping"
+          },
+          "narwhals_dtypes": {
+            "type": "array",
+            "description": "List of narwhals dtype names that map to this category",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "examples": [
+              ["Int64", "Float64", "Decimal"],
+              ["String", "Categorical", "Enum"]
+            ]
+          },
+          "color_variable": {
+            "type": "string",
+            "pattern": "^\\$[a-z][a-z0-9-]*$",
+            "description": "Textual CSS variable name for color styling (must start with $)",
+            "examples": ["$primary", "$success", "$warning", "$accent", "$text-muted"]
+          },
+          "icon_ascii": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1,
+            "pattern": "^[ -~]$",
+            "description": "Single ASCII character (printable range 32-126) representing this type",
+            "examples": ["#", "\"", "@", "?", "·"]
+          },
+          "icon_unicode": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2,
+            "description": "Unicode character fallback for enhanced terminals (emoji or symbol)",
+            "examples": ["🔢", "📝", "📅", "☑", "❓"]
+          },
+          "filter_operators": {
+            "type": "array",
+            "description": "Available filter operators for this data type category",
+            "items": {
+              "type": "string",
+              "enum": [">", "<", ">=", "<=", "=", "!=", "==", "contains", "startswith", "endswith"]
+            },
+            "minItems": 1,
+            "examples": [
+              [">", "<", ">=", "<=", "=", "!="],
+              ["==", "!=", "contains"]
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "version": "1.0.0",
+      "type_mappings": [
+        {
+          "type_category": "numeric",
+          "narwhals_dtypes": [
+            "Int8", "Int16", "Int32", "Int64",
+            "UInt8", "UInt16", "UInt32", "UInt64",
+            "Float32", "Float64", "Decimal"
+          ],
+          "color_variable": "$primary",
+          "icon_ascii": "#",
+          "icon_unicode": "🔢",
+          "filter_operators": [">", "<", ">=", "<=", "=", "!="]
+        },
+        {
+          "type_category": "text",
+          "narwhals_dtypes": ["String", "Categorical", "Enum", "Object"],
+          "color_variable": "$success",
+          "icon_ascii": "\"",
+          "icon_unicode": "📝",
+          "filter_operators": ["==", "!=", "contains", "startswith", "endswith"]
+        },
+        {
+          "type_category": "date",
+          "narwhals_dtypes": ["Date", "Datetime", "Duration", "Time"],
+          "color_variable": "$warning",
+          "icon_ascii": "@",
+          "icon_unicode": "📅",
+          "filter_operators": [">", "<", ">=", "<=", "=", "!="]
+        },
+        {
+          "type_category": "boolean",
+          "narwhals_dtypes": ["Boolean"],
+          "color_variable": "$accent",
+          "icon_ascii": "?",
+          "icon_unicode": "☑",
+          "filter_operators": ["==", "!="]
+        },
+        {
+          "type_category": "unknown",
+          "narwhals_dtypes": ["Null", "Unknown", "Struct", "List", "Array"],
+          "color_variable": "$text-muted",
+          "icon_ascii": "·",
+          "icon_unicode": "❓",
+          "filter_operators": ["==", "!="]
+        }
+      ]
+    }
+  ]
+}

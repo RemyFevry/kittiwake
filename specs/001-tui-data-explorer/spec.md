@@ -21,33 +21,43 @@ A data analyst opens kittiwake in their terminal using the `kw` command. They ca
 2. **Given** kittiwake is launched with load subcommand and file paths (`kw load file1.csv file2.json`), **When** application starts, **Then** all specified files load automatically and the first displays in the main view
 3. **Given** kittiwake is launched with mixed local and remote sources (`kw load local.csv https://example.com/data.parquet`), **When** application starts, **Then** both datasets load and are available for viewing
 4. **Given** kittiwake is launched, **When** user presses the file open shortcut and selects a local CSV file, **Then** data loads and displays in a paginated table with column headers
-5. **Given** data is displayed, **When** user presses arrow keys, **Then** cursor moves between rows and columns with visual feedback
-6. **Given** a dataset with 1M+ rows, **When** user loads the file, **Then** application remains responsive and shows loading progress
-7. **Given** data is displayed, **When** user presses the page down key, **Then** next page of data loads within 100ms
-8. **Given** user is viewing data, **When** they press the help key, **Then** keyboard shortcuts overlay appears
-9. **Given** one dataset is loaded, **When** user loads a second dataset, **Then** both datasets are available and user can switch between them via keyboard shortcut
-10. **Given** multiple datasets are loaded, **When** user activates split pane mode, **Then** two datasets display side-by-side for comparison
-11. **Given** user has 10 datasets loaded, **When** user attempts to load an 11th dataset, **Then** system displays message prompting to close an existing dataset first
-12. **Given** multiple datasets are loaded, **When** user views the interface, **Then** visual indicators (tabs or list) show all loaded datasets with active one highlighted
+5. **Given** data is displayed, **When** user presses Left/Right arrow keys, **Then** cursor moves between columns with visual feedback
+6. **Given** data is displayed, **When** user presses Up/Down arrow keys, **Then** cursor moves between rows with visual feedback
+7. **Given** a dataset with 1M+ rows, **When** user loads the file, **Then** application remains responsive and shows loading progress
+8. **Given** data is displayed, **When** user presses the page down key, **Then** next page of data loads within 100ms
+9. **Given** user is viewing data, **When** they press the help key, **Then** keyboard shortcuts overlay appears
+10. **Given** one dataset is loaded, **When** user loads a second dataset, **Then** both datasets are available and user can switch between them via keyboard shortcut
+11. **Given** multiple datasets are loaded, **When** user activates split pane mode, **Then** two datasets display side-by-side for comparison
+12. **Given** user has 10 datasets loaded, **When** user attempts to load an 11th dataset, **Then** system displays message prompting to close an existing dataset first
+13. **Given** multiple datasets are loaded, **When** user views the interface, **Then** visual indicators (tabs or list) show all loaded datasets with active one highlighted
+14. **Given** data is displayed with long column content, **When** user views columns, **Then** each column is capped at 40 characters with ellipsis for longer content
+15. **Given** a cell contains truncated content and cursor is on that cell, **When** user presses Enter key, **Then** full content displays in a modal or overlay
+16. **Given** dataset has more columns than fit on screen, **When** user navigates right beyond visible columns, **Then** viewport automatically scrolls to show the next columns
+17. **Given** data is displayed with many columns, **When** user presses Ctrl+Right, **Then** cursor jumps 5 columns to the right
+18. **Given** data is displayed with many columns, **When** user presses Ctrl+Left, **Then** cursor jumps 5 columns to the left
 
 ---
 
 ### User Story 2 - Filter and Search Data (Priority: P2)
 
-A user has loaded a dataset and wants to find specific records. They activate the search function via keyboard, type filter criteria (e.g., "age > 25"), and see results update in real-time. They can combine multiple filters and clear them quickly. When switching to a different dataset, the filters remain on the original dataset and the new dataset displays with its own independent filter state.
+A user has loaded a dataset and wants to find specific records. They activate the filter function via keyboard, which opens the left sidebar with a filter configuration form. They select a column, choose an operator (e.g., "age > 25"), enter a value, and apply the filter. In lazy mode (default), the left sidebar dismisses and the operation appears in the right sidebar as "queued" without changing the data table. The user can continue adding more operations or execute them one-by-one or all at once using keyboard shortcuts. When executed, results update in the data table. In eager mode, operations execute immediately when applied. They can open the left sidebar again to add more filters, view the filter chain in the right sidebar, edit existing filters by clicking them in the right sidebar (which reopens the left sidebar with pre-filled values), or reorder filters using keyboard shortcuts. When switching to a different dataset, the filters remain on the original dataset and the new dataset displays with its own independent filter state and operations history.
 
 **Why this priority**: Filtering is essential for data exploration and narrows down large datasets to relevant subsets. It's a prerequisite for meaningful analysis.
 
-**Independent Test**: Load sample data, apply text search and column filters, verify filtered results display correctly and can be cleared. Load a second dataset, verify first dataset's filters are preserved when switching back.
+**Independent Test**: Load sample data, apply text search and column filters using left sidebar, verify operations appear in right sidebar as queued (lazy mode) or executed (eager mode), execute queued operations and verify filtered results display correctly in data table, verify filters can be edited/removed/reordered. Load a second dataset, verify first dataset's filters are preserved when switching back.
 
 **Acceptance Scenarios**:
 
-1. **Given** data is displayed, **When** user activates search mode and types text, **Then** rows matching the text in any column are highlighted and non-matching rows are hidden
-2. **Given** data is displayed, **When** user activates column filter and selects a column with conditions, **Then** only rows meeting the conditions remain visible
-3. **Given** multiple filters are active, **When** user clears filters, **Then** full dataset is restored immediately
+1. **Given** data is displayed in lazy mode (default), **When** user activates search mode (opens left sidebar) and types text in search form, **Then** left sidebar dismisses after apply, right sidebar shows search operation as "queued", and data table remains unchanged until execution
+2. **Given** data is displayed in eager mode, **When** user activates search mode (opens left sidebar) and types text in search form, **Then** left sidebar dismisses after apply, right sidebar shows search operation as "executed", and rows matching the text in any column are highlighted while non-matching rows are hidden immediately
+3. **Given** data is displayed in lazy mode, **When** user activates column filter (opens left sidebar) and configures column with conditions, **Then** left sidebar dismisses after apply, right sidebar shows filter operation as "queued", and data table remains unchanged until execution
+4. **Given** data is displayed in eager mode, **When** user activates column filter (opens left sidebar) and configures column with conditions, **Then** left sidebar dismisses after apply, right sidebar shows filter operation as "executed", and only rows meeting the conditions remain visible immediately
+3. **Given** multiple filters are active (shown in right sidebar), **When** user clears all filters via keyboard command, **Then** all operations are removed from right sidebar, right sidebar auto-hides, and full dataset is restored immediately
 4. **Given** a large dataset with filters applied, **When** filters change, **Then** results update within 500ms with progress indicator for longer operations
-5. **Given** filters are applied to dataset A, **When** user switches to dataset B, **Then** dataset B displays without filters and dataset A's filters remain intact
-6. **Given** user switches back to a previously filtered dataset, **When** dataset becomes active, **Then** previous filter state is restored
+5. **Given** filters are applied to dataset A (visible in right sidebar), **When** user switches to dataset B, **Then** dataset B displays without filters and dataset A's filters remain intact in its own operations history
+6. **Given** user switches back to a previously filtered dataset, **When** dataset becomes active, **Then** previous filter state is restored and right sidebar shows previous operations history
+7. **Given** operations are visible in right sidebar, **When** user selects an operation and chooses edit, **Then** left sidebar opens with pre-filled form values for that operation
+8. **Given** multiple operations in right sidebar, **When** user reorders operations using keyboard shortcuts, **Then** operations re-apply in new sequence and data table updates accordingly
 
 ---
 
@@ -145,7 +155,7 @@ A user has performed several exploratory analyses and wants to save specific ana
 - What happens when user tries to aggregate non-numeric columns? Show appropriate warning and suggest compatible operations (count, unique values).
 - What happens when terminal window is resized during operation? Layout adapts immediately without losing state.
 - What happens when user tries to load an unsupported file format? Display clear error with list of supported formats.
-- What happens when join keys have mismatched data types? Attempt automatic conversion or warn user to manually cast columns.
+- What happens when join keys have mismatched data types? System attempts narwhals-supported automatic type conversion (int↔float, string→category). If conversion fails or types are incompatible (e.g., Int64 vs String), display modal: "Join key types differ: left=Int64, right=String. Options: (a) Cancel join (b) View type details (c) Manually select columns with correct types"
 - What happens when user tries to export an unsaved analysis? System prompts to save analysis first before allowing export.
 - What happens when DuckDB database is corrupted or inaccessible? Display error and offer to reinitialize database (with warning about data loss).
 - What happens when exporting to a file path that already exists? Prompt user to overwrite, rename, or cancel.
@@ -159,6 +169,20 @@ A user has performed several exploratory analyses and wants to save specific ana
 - What happens when user tries to load more than 10 datasets? Display message indicating limit reached and prompt to close an existing dataset before loading new one.
 - What happens when user launches with more than 10 files in `kw load` command? Load first 10 datasets and display warning listing datasets that were not loaded due to limit.
 - What happens when user runs `kw` with an unrecognized subcommand? Display error message with list of valid subcommands and usage help.
+- What happens when dataset contains columns with very wide content (e.g., long text fields, URLs)? Column width is capped at 40 characters with ellipsis; users can view full content via keyboard shortcut.
+- What happens when dataset has 100+ columns and user navigates horizontally? Viewport automatically scrolls to follow cursor; column headers remain visible; performance stays under 100ms per navigation step.
+- What happens when user reorders operations and the new sequence produces an error (e.g., filtering on a column that was dropped in an earlier operation)? Display error message, revert to previous valid operation order, and highlight the problematic operation.
+- What happens when user edits an operation in the middle of the operations chain? System re-applies all operations from the edited operation onward in sequence, updating the dataset view.
+- What happens when user removes an operation that other operations depend on? System re-applies remaining operations in order; if subsequent operations fail due to missing dependencies, display error and allow user to fix or remove dependent operations.
+- What happens when terminal width is too narrow to display both sidebars and data table? System enforces minimum terminal width (e.g., 80 columns); if terminal is resized below minimum, display warning overlay suggesting resize.
+- What happens when user opens left sidebar while right sidebar is visible? Both sidebars display simultaneously (left overlays data at 30% width, right compresses data to 75% width, effective data viewing width is 45%).
+- What happens when user closes left sidebar after applying operation? Left sidebar dismisses, data table remains at compressed width (75%) if right sidebar is visible, or returns to full width if right sidebar is hidden.
+- What happens when user switches from lazy to eager mode with queued operations? System displays modal prompting user to choose: (a) Execute all queued operations and switch to eager mode, (b) Clear queued operations and switch to eager mode, (c) Cancel mode switch and stay in lazy mode. Modal uses keyboard shortcuts (1/2/3 or E/C/Esc) for selection.
+- What happens when user switches from eager to lazy mode? Mode switches immediately; future operations queue without executing until user triggers execution.
+- What happens when user switches datasets with queued operations in lazy mode? Queued operations remain associated with the original dataset; switching back restores the queued state.
+- What happens when user executes operations one-by-one and an operation fails? Execution stops at the failed operation, error displays, and remaining queued operations stay queued for user to fix or remove the problematic operation.
+- What happens when user tries to toggle execution mode while right sidebar is hidden? Ctrl+M keyboard shortcut still works to toggle mode; right sidebar auto-shows to display new mode state and allow further interaction.
+- What happens when user presses Ctrl+E or Ctrl+Shift+E in eager mode? Keyboard shortcuts are ignored (no-op) since there are no queued operations in eager mode; optionally show brief message "No queued operations (eager mode active)".
 
 ## Requirements *(mandatory)*
 
@@ -177,26 +201,45 @@ A user has performed several exploratory analyses and wants to save specific ana
 - **FR-055**: System MUST provide keyboard shortcuts to switch between loaded datasets
 - **FR-056**: System MUST support split pane mode to display two datasets side-by-side
 - **FR-057**: System MUST load all CLI-specified datasets at startup via `kw load`, displaying the first in the main view
-- **FR-063**: System MUST enforce a maximum limit of 10 simultaneously loaded datasets
-- **FR-064**: System MUST display visual indicators (tabs or list) showing all loaded datasets with the active one highlighted
-- **FR-065**: System MUST prevent loading additional datasets when limit is reached and prompt user to close existing datasets
+- **FR-063**: System MUST enforce a maximum limit of 10 simultaneously loaded datasets with: (a) prevention when limit reached, (b) visual indicators (tabs or list) showing all loaded datasets with active one highlighted, (c) prompt to close existing dataset before adding new one
 
 **User Interface:**
 - **FR-006**: System MUST provide keyboard-only navigation for all features
 - **FR-007**: System MUST display a help overlay showing keyboard shortcuts in current context
 - **FR-008**: System MUST provide visual feedback for all keyboard actions within 100ms
-- **FR-009**: System MUST adapt layout when terminal window is resized
+- **FR-009**: System MUST adapt layout when terminal window is resized within 100ms without losing data view position by: (a) maintaining current row/column cursor position, (b) recalculating column widths proportionally, (c) reflowing panels using Textual's reactive layout system
 - **FR-010**: System MUST support both light and dark terminal themes
 - **FR-058**: System MUST apply all operations (filter, aggregate, pivot, etc.) only to the active dataset
 - **FR-059**: System MUST maintain independent operation state for each loaded dataset
 - **FR-060**: System MUST preserve operation state when switching between datasets
+- **FR-071**: System MUST display a left sidebar for operation configuration (filter, search, aggregate, pivot, join forms) that overlays the data table (data remains full-width behind semi-transparent sidebar) with width of 30% of terminal width
+- **FR-072**: System MUST display a right sidebar showing applied operations history that pushes/compresses the data table width, with width of 25% of terminal width
+- **FR-073**: System MUST allow toggling left sidebar visibility via keyboard shortcut while maintaining data table visibility
+- **FR-074**: System MUST allow toggling right sidebar visibility via keyboard shortcut
+- **FR-075**: System MUST auto-show right sidebar when first operation is applied to a dataset and hide it when operations list becomes empty (cleared or all removed)
+- **FR-076**: System MUST allow users to remove individual operations from the operations history list in right sidebar
+- **FR-077**: System MUST allow users to edit operation parameters by selecting an operation from right sidebar, which reopens the left sidebar form with pre-filled values
+- **FR-078**: System MUST allow users to reorder operations in the operations history using keyboard shortcuts (e.g., Ctrl+Up/Down to move selected operation)
+- **FR-079**: System MUST re-apply operations in the new sequence when operation order changes, updating the dataset view accordingly
+- **FR-080**: System MUST default to lazy execution mode where operations queue without executing until user triggers execution
+- **FR-081**: System MUST provide a toggle to switch between lazy execution mode and eager execution mode
+- **FR-082**: System MUST display current execution mode (lazy or eager) in right sidebar header with clickable toggle button and support Ctrl+M keyboard shortcut to switch modes
+- **FR-083**: System MUST allow executing queued operations one-by-one in sequence via Ctrl+E keyboard shortcut
+- **FR-084**: System MUST allow executing all queued operations at once via Ctrl+Shift+E keyboard shortcut
+- **FR-085**: System MUST visually differentiate queued and executed operations in right sidebar using icon prefix (⏸ for queued, ✓ for executed) combined with color coding (yellow/amber for queued, green for executed)
+- **FR-086**: System MUST prompt user with modal when switching from lazy to eager mode with queued operations, offering options to: (1) execute all and switch, (2) clear all and switch, or (3) cancel, with keyboard shortcuts for quick selection
 
 **Data Viewing:**
 - **FR-011**: System MUST display data in a paginated table with column headers
 - **FR-012**: System MUST show row numbers and total row count
-- **FR-013**: System MUST allow users to scroll horizontally and vertically through data
+- **FR-013**: System MUST allow users to scroll horizontally and vertically through data with Left/Right arrow keys for column navigation, Up/Down arrow keys for row navigation, and active cell highlighted with clear visual indicator
 - **FR-014**: System MUST display loading indicators for operations exceeding 500ms
-- **FR-015**: System MUST allow users to cancel long-running operations
+- **FR-015**: System MUST allow users to cancel long-running operations via Esc key, discarding partial results and restoring dataset to pre-operation state
+- **FR-066**: System MUST cap column width at 40 characters maximum
+- **FR-067**: System MUST truncate column content exceeding 40 characters with ellipsis (...)
+- **FR-068**: System MUST provide Enter key shortcut to view full content of truncated cells in a modal or overlay
+- **FR-069**: System MUST support Ctrl+Left/Right to jump 5 columns at a time for fast horizontal navigation
+- **FR-070**: System MUST automatically scroll viewport horizontally when cursor navigates beyond visible columns
 
 **Filtering and Search:**
 - **FR-016**: System MUST support text search across all columns
@@ -221,7 +264,7 @@ A user has performed several exploratory analyses and wants to save specific ana
 - **FR-029**: System MUST support inner, left, right, and outer joins
 - **FR-030**: System MUST allow users to select join columns from each dataset
 - **FR-031**: System MUST preview merge results before applying
-- **FR-032**: System MUST warn when join keys have mismatched types or missing values
+- **FR-032**: System MUST warn when join keys have mismatched types or missing values. System attempts narwhals-supported automatic type conversion (int↔float, string→category); if conversion fails, display modal with options: (a) Cancel join, (b) View type mismatch details, (c) Manually select columns with correct types
 
 **Workflow Management:**
 - **FR-033**: System MUST allow users to save sequences of operations as reusable workflows
@@ -230,9 +273,10 @@ A user has performed several exploratory analyses and wants to save specific ana
 - **FR-036**: System MUST provide undo/redo for individual operations
 
 **Export:**
-- **FR-037**: System MUST export current view (filtered/aggregated) to CSV format
-- **FR-038**: System MUST export to Parquet format for efficient storage
+- **FR-037**: System MUST export current dataset view (filtered/aggregated data) to CSV format
+- **FR-038**: System MUST export current dataset view to Parquet format for efficient storage
 - **FR-039**: System MUST allow exporting pivot tables as separate files
+- **Note**: FR-037 to FR-039 export *data files*. For exporting *executable code* (marimo/Python/Jupyter notebooks), see FR-046 to FR-048.
 
 **Saved Analysis Management:**
 - **FR-040**: System MUST allow users to save current analysis with name and description
@@ -241,17 +285,18 @@ A user has performed several exploratory analyses and wants to save specific ana
 - **FR-043**: System MUST allow users to update name and description of saved analyses
 - **FR-044**: System MUST allow users to delete saved analyses
 - **FR-045**: System MUST prevent export of analyses that haven't been saved
-- **FR-046**: System MUST export saved analyses to marimo notebook format (.py with marimo cells)
-- **FR-047**: System MUST export saved analyses to Python script format (.py with narwhals operations)
-- **FR-048**: System MUST export saved analyses to Jupyter notebook format (.ipynb)
+- **FR-046**: System MUST export saved analyses to marimo notebook format (.py with marimo cells) containing data loading and operation code
+- **FR-047**: System MUST export saved analyses to Python script format (.py with narwhals operations) containing data loading and operation code
+- **FR-048**: System MUST export saved analyses to Jupyter notebook format (.ipynb) containing data loading and operation code
 - **FR-049**: System MUST include data loading code and all operations in exported notebooks/scripts
 - **FR-050**: System MUST prompt for file overwrite confirmation when export path already exists
+- **Note**: FR-046 to FR-048 export *executable code notebooks/scripts*. For exporting *data files*, see FR-037 to FR-039.
 - **FR-061**: System MUST allow users to load a saved analysis, which reloads the original dataset and reapplies all operations
 - **FR-062**: System MUST verify dataset path accessibility before loading saved analysis and warn if unavailable
 
 ### Key Entities
 
-- **Dataset**: Represents loaded data with schema information (column names, types, row count), source location (file path or URL), backend engine (pandas/polars/etc. via narwhals), active status (whether currently displayed in main view), and operation history (narwhals expressions applied to this dataset)
+- **Dataset**: Represents loaded data with schema information (column names, types, row count), source location (file path or URL), backend engine (pandas/polars/etc. via narwhals), active status (whether currently displayed in main view), execution_mode (str: "lazy" or "eager" - controls whether operations execute immediately or queue), queued_operations (list of Operation objects pending execution in lazy mode), and executed_operations (list of Operation objects already applied to the dataset, previously called operation_history)
 
 - **DatasetSession**: Represents the collection of all loaded datasets in the current session with list of Dataset objects (max 10), active dataset reference, and split pane configuration state
 
@@ -259,9 +304,10 @@ A user has performed several exploratory analyses and wants to save specific ana
   - `code` (str): Narwhals expression code string (e.g., `"df.filter(nw.col('age') > 25)"`)
   - `display` (str): Human-readable description (e.g., `"Filter: age > 25"`)
   - `operation_type` (str): Operation category (filter, aggregate, pivot, join, select, drop, rename, with_columns, sort, unique, fill_null, drop_nulls, head, tail, sample)
-  - `params` (dict): Operation parameters for modal editing (e.g., `{"column": "age", "operator": ">", "value": 25}`)
-  - Generated by TUI modals (keyboard-driven forms), never written by users directly
+  - `params` (dict): Operation parameters for sidebar form editing (e.g., `{"column": "age", "operator": ">", "value": 25}`)
+  - Generated by left sidebar forms (keyboard-driven configuration panels), never written by users directly
   - Validated immediately on creation and at runtime when applied
+  - Displayed in right sidebar operations history list after application
 
 - **Workflow**: Represents a saved sequence of operations with name, description, operation steps (list of Operation objects), and target dataset schema
 
@@ -281,22 +327,89 @@ A user has performed several exploratory analyses and wants to save specific ana
 ### Measurable Outcomes
 
 - **SC-001**: Users can load a 1GB CSV file and view first page of data within 3 seconds
-- **SC-002**: Users can navigate between rows using arrow keys with under 100ms response time
+- **SC-002**: Users can navigate between rows and columns using arrow keys with under 100ms response time
+- **SC-016**: Users can jump 5 columns using Ctrl+Left/Right with under 100ms response time
 - **SC-003**: Users can complete a filter → group → aggregate workflow in under 2 minutes on their first use (with help overlay)
 - **SC-004**: System remains responsive with datasets containing 10M+ rows using lazy evaluation
-- **SC-005**: 90% of users can discover and use core features (load, filter, aggregate) without reading documentation
+- **SC-005**: Help overlay (FR-007) displays core keyboard shortcuts in context-aware sections. First-time users complete load and navigate workflow (User Story 1 acceptance scenario 4: load CSV file + arrow key navigation between rows/columns) within 5 minutes using only help overlay for guidance
 - **SC-006**: Users can create and save a complex workflow (5+ operations) and reapply it to a new dataset in under 1 minute
 - **SC-007**: System displays progress feedback for all operations taking longer than 500ms
 - **SC-008**: Terminal layout adapts to window resize within 100ms without losing data view position
-- **SC-009**: Users successfully complete data joining tasks 85% of the time on first attempt
-- **SC-010**: System handles common errors (file not found, network timeout, type mismatches) with clear, actionable error messages
+- **SC-009**: First-time users complete data joining tasks (User Story 5 acceptance scenarios 1-2: activate merge mode, select join columns/type, preview shows expected row count, confirm produces correct dataset) within 10 minutes using help overlay for guidance
+- **SC-010**: System handles common errors (file not found, network timeout, type mismatches) with clear, actionable error messages that include: (a) What failed, (b) Why it failed, (c) Next action (e.g., "File not found: data.csv. Check path or use Ctrl+O to browse")
 - **SC-011**: Users can save, update, and export an analysis to marimo/Python/Jupyter in under 30 seconds
 - **SC-012**: Exported notebooks/scripts execute successfully without modification 95% of the time
 - **SC-013**: DuckDB operations (save, list, update, delete analyses) complete within 200ms for databases with up to 1000 saved analyses
 - **SC-014**: Users can switch between 10 loaded datasets with under 150ms response time
 - **SC-015**: Visual dataset indicators (tabs/list) remain readable and navigable with up to 10 datasets loaded
+- **SC-017**: Left sidebar opens/closes within 100ms; right sidebar auto-shows within 100ms when first operation applied
+- **SC-018**: Operation reordering in right sidebar re-applies operations and updates data table within 500ms for datasets with up to 1M rows
+- **SC-019**: Users can queue 10+ operations in lazy mode, execute them one-by-one (Ctrl+E) or all at once (Ctrl+Shift+E), and switch between lazy/eager modes within 3 total interactions
 
 ## Clarifications
+
+### Session 2026-01-09 (Lazy/Eager Execution Mode)
+
+**Context**: User requested adding execution mode toggle where operations can queue up without executing (lazy mode) vs executing immediately (eager mode), with keyboard shortcuts to execute operations one-by-one or all at once.
+
+**Questions and Answers**:
+
+1. **Q**: What should be the default execution behavior when users first launch kittiwake?
+   - **A**: Default to lazy mode (operations queue up until user executes them)
+
+2. **Q**: Where and how should the lazy/eager mode toggle be displayed and controlled?
+   - **A**: Right sidebar header (operations history) with visual toggle button + Ctrl+M keyboard shortcut
+
+3. **Q**: Which keyboard shortcuts should trigger operation execution?
+   - **A**: Ctrl+E (execute next queued operation), Ctrl+Shift+E (execute all queued operations)
+
+4. **Q**: How should queued vs executed operations be visually differentiated in the right sidebar?
+   - **A**: Icons/symbols prefix combined with colors - Queued: `⏸ Operation` (yellow/amber), Executed: `✓ Operation` (green)
+
+5. **Q**: What should happen when the user switches from lazy to eager mode while there are queued operations?
+   - **A**: Prompt user with modal offering three choices: (1) Execute all and switch to eager mode, (2) Clear queued operations and switch to eager mode, (3) Cancel (stay in lazy mode)
+
+### Session 2026-01-09 (Sidebar UI Architecture)
+
+**Context**: User requested replacing modal-based UI with sidebar-based UI for operations. Left sidebar for configuring operations (search, filter, etc.) and right sidebar showing applied operations history.
+
+**Questions and Answers**:
+
+1. **Q**: How should sidebars affect the data table viewport width?
+   - **A**: Left sidebar (filter/search configuration) overlays data; right sidebar (applied operations) pushes/compresses data table
+
+2. **Q**: What should be the default visibility state of the right sidebar (operations history)?
+   - **A**: Auto-show when first operation applied, hidden when empty
+
+3. **Q**: What interactions should be available in the right sidebar (operations history)?
+   - **A**: View, remove, edit, and reorder operations (drag-and-drop or keyboard shortcuts to change sequence)
+
+4. **Q**: How wide should the left sidebar (operation configuration) be?
+   - **A**: 30% of terminal width
+
+5. **Q**: How wide should the right sidebar (operations history) be?
+   - **A**: 25% of terminal width
+
+### Session 2026-01-09 (Column Navigation)
+
+**Context**: User requested improved column navigation and capped column widths for better keyboard-driven data exploration.
+
+**Questions and Answers**:
+
+1. **Q**: What should be the maximum character width for table columns?
+   - **A**: Fixed reasonable limit (e.g., 30-40 chars) with ellipsis truncation and tooltip/modal to view full content
+
+2. **Q**: How should arrow key navigation work for moving between columns vs rows?
+   - **A**: Left/Right arrows move between columns; Up/Down move between rows (standard spreadsheet behavior)
+
+3. **Q**: When a dataset has more columns than fit on screen (with 40-char cap), how should horizontal scrolling work?
+   - **A**: Horizontal scroll auto-triggers when navigating beyond viewport (cursor movement causes automatic column scrolling)
+
+4. **Q**: What keyboard shortcut should trigger the full content view for truncated cells?
+   - **A**: Enter key
+
+5. **Q**: What keyboard shortcuts should enable fast column navigation (jumping multiple columns)?
+   - **A**: Ctrl+Left/Right to jump 5 columns at a time (fixed increment)
 
 ### Session 2026-01-07
 
@@ -350,10 +463,10 @@ A user has performed several exploratory analyses and wants to save specific ana
    - **A**: Store as Python code strings. TUI will translate user interactions into narwhals code, but users never write code directly.
 
 2. **Q**: How should the TUI enable users to build narwhals expressions without writing code?
-   - **A**: Modal-based approach with forms (filter modal with column dropdown, operator dropdown, value input) - keyboard-driven.
+   - **A**: Sidebar-based approach with forms (left sidebar with column dropdown, operator dropdown, value input for filter configuration; right sidebar displays applied operations history) - keyboard-driven.
 
-3. **Q**: Which narwhals operations need TUI modal support initially?
-   - **A**: 13 operations with dedicated modals:
+3. **Q**: Which narwhals operations need TUI sidebar form support initially?
+   - **A**: 13 operations with dedicated sidebar forms:
      - Core: filter, aggregate, pivot, join
      - Selection: select, drop, rename
      - Transform: with_columns, sort
@@ -373,5 +486,5 @@ A user has performed several exploratory analyses and wants to save specific ana
 - Simplified Key Entities: Removed Filter, Aggregation, PivotTable classes; replaced with single Operation entity
 - Operation stores: code (narwhals expression string), display (human-readable), operation_type, params (for editing)
 - Updated SavedAnalysis.operations field description to reflect code-based storage
-- All 13 operation types will have dedicated keyboard-driven modal forms in TUI
-- Validation occurs both at modal submit time and runtime application
+- All 13 operation types will have dedicated keyboard-driven sidebar forms in TUI (left sidebar for configuration, right sidebar for history)
+- Validation occurs both at sidebar form submit time and runtime application

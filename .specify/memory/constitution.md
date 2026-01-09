@@ -31,8 +31,19 @@ optional enhancement only. The TUI MUST provide:
 - Help overlay showing available shortcuts in current context
 - No modal dialogs that trap focus without keyboard escape
 
+**Universal Keybinding Standards:**
+Keybindings MUST be universally compatible across keyboard layouts and operating systems:
+- **PREFER** standard conventions (Ctrl+C/V/X, Ctrl+Z/Shift+Z, Ctrl+S, Ctrl+F, etc.)
+- **AVOID** symbol keys that vary by layout (`/`, `\`, `[`, `]`, etc.)
+- **AVOID** keybindings that conflict with terminal/shell shortcuts (Ctrl+C for SIGINT, Ctrl+D for EOF)
+- **TEST** on multiple layouts: QWERTY (US), AZERTY (FR), QWERTZ (DE), etc.
+- **DOCUMENT** why non-standard shortcuts are used (e.g., Ctrl+H for search instead of Ctrl+/ due to AZERTY layout)
+- **PROVIDE** alternatives for actions when standard shortcuts conflict
+
 **Rationale**: Terminal users expect efficient keyboard workflows. Mouse dependency breaks
-the terminal-native experience and reduces productivity for power users.
+the terminal-native experience and reduces productivity for power users. International
+users on non-QWERTY layouts must have equal access to all features without hunting for
+symbol keys or dealing with layout-specific issues.
 
 ### II. Data Source Agnostic
 

@@ -1,18 +1,17 @@
 # Tasks: TUI Data Explorer
 
-**Feature**: 001-tui-data-explorer  
 **Input**: Design documents from `/specs/001-tui-data-explorer/`  
-**Prerequisites**: plan.md ✅, spec.md ✅, research.md ✅, data-model.md ✅, contracts/ ✅
+**Prerequisites**: plan.md ✅, spec.md ✅, research.md ✅, contracts/ (to be generated in Phase 1)
 
-**Tests**: Test tasks are NOT included since the specification does not explicitly request TDD approach.
+**Tests**: Tests are OPTIONAL - only included if explicitly requested in feature specification.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
-## Format: `- [ ] [ID] [P?] [Story?] Description with file path`
+## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story this task belongs to (US1, US2, US3, US4, US5, US6, US7)
-- All tasks include exact file paths
+- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
+- Include exact file paths in descriptions
 
 ---
 
@@ -20,10 +19,9 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create project directory structure: src/kittiwake/{models,widgets,screens,services,utils}/ and tests/{contract,integration,unit}/
-- [ ] T002 Initialize Python project with pyproject.toml dependencies: textual>=7.0.1, narwhals>=2.15.0, typer>=0.9.0, duckdb>=0.10.0, httpx>=0.27.0, nbformat>=5.10.0, jinja2>=3.1.0
-- [ ] T003 [P] Configure ruff linting and formatting in pyproject.toml
-- [ ] T004 [P] Create pytest configuration in pyproject.toml with test paths and pytest-asyncio dependency
+- [x] T001 ✅ Create project structure with `src/kittiwake/` and `tests/` (ALREADY COMPLETE)
+- [x] T002 ✅ Initialize Python 3.13 project with uv, narwhals, textual dependencies (ALREADY COMPLETE)
+- [x] T003 ✅ [P] Configure pyproject.toml with entry points `kittiwake` and `kw` (ALREADY COMPLETE)
 
 ---
 
@@ -33,16 +31,53 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 Create CLI entry point with Typer in src/kittiwake/cli.py (bare `kw` command and `kw load` subcommand)
-- [ ] T006 [P] Create main Textual App class in src/kittiwake/app.py with DatasetSession initialization
-- [ ] T007 [P] Implement DatasetSession entity in src/kittiwake/models/dataset.py (manages up to 10 datasets, active dataset tracking, split pane state)
-- [ ] T008 [P] Implement Dataset entity in src/kittiwake/models/dataset.py (with UUID, name, source, backend, frame, schema, operation_history fields)
-- [ ] T009 [P] Implement Operation entity in src/kittiwake/models/operations.py (code, display, operation_type, params storage with to_dict/from_dict/apply/validate methods)
-- [ ] T010 Create async DataLoader service in src/kittiwake/services/data_loader.py (supports CSV/Parquet/JSON from local and HTTP/HTTPS URLs with httpx streaming)
-- [ ] T011 [P] Create NarwhalsOps service in src/kittiwake/services/narwhals_ops.py (get_page function for pagination with narwhals lazy frames)
-- [ ] T012 [P] Setup DuckDB schema initialization in src/kittiwake/services/persistence.py (create analyses.db with saved_analyses table, enable WAL mode)
-- [ ] T013 [P] Create utility for keyboard bindings registry in src/kittiwake/utils/keybindings.py
-- [ ] T014 [P] Create async/worker helper utilities in src/kittiwake/utils/async_helpers.py
+### Core Models & Services
+
+- [x] T004 ✅ [P] Create base Operation model in `src/kittiwake/models/operations.py` with fields: code, display, operation_type, params, state, id (ALREADY COMPLETE)
+- [x] T005 ✅ Update Operation model to add `state: str = "queued"` field ("queued" | "executed" | "failed") - COMPLETE 2026-01-09
+- [x] T006 ✅ Add `to_code()` method to Operation model for code generation - COMPLETE 2026-01-09
+- [x] T007 ✅ [P] Create Dataset model in `src/kittiwake/models/dataset.py` (ALREADY COMPLETE - needs update)
+- [x] T008 ✅ Update Dataset model to add lazy/eager execution fields - COMPLETE 2026-01-09:
+  - `execution_mode: str = "lazy"` 
+  - `queued_operations: list[Operation]`
+  - `executed_operations: list[Operation]` (rename from `operation_history`)
+- [x] T009 ✅ Add methods to Dataset: `queue_operation()`, `execute_next_queued()`, `execute_all_queued()`, `clear_queued()` - COMPLETE 2026-01-09
+- [x] T010 ✅ [P] Create DatasetSession model in `src/kittiwake/models/dataset_session.py` (ALREADY COMPLETE)
+- [ ] T011 Update DatasetSession with memory warning methods (`warn_approaching_limit()`, `can_add_dataset()`)
+
+### Execution Infrastructure
+
+- [ ] T012 Create ExecutionManager service in `src/kittiwake/services/execution_manager.py`
+  - Implement `execute_next(dataset)` → ExecutionResult
+  - Implement `execute_all(dataset, progress_callback)` → list[ExecutionResult]
+  - Implement `_friendly_error(operation, error)` for user-friendly error messages
+  - Implement stop-on-error with queue preservation
+- [ ] T013 Create ExecutionResult dataclass with fields: success, operation, error_message, execution_time_ms
+
+### Persistence Infrastructure
+
+- [ ] T014 [P] Create DuckDB schema for SavedAnalysis in `~/.kittiwake/analyses.db`
+  - Table: saved_analyses (id, name, description, created_at, modified_at, operation_count, dataset_path, operations JSON)
+  - Add indexes on name and created_at
+- [ ] T015 [P] Implement DuckDBManager class in `src/kittiwake/services/persistence.py`
+  - Thread-safe connection-per-thread pattern
+  - Write lock for INSERT/UPDATE/DELETE
+  - Methods: save_analysis(), load_analysis(), list_analyses(), update_analysis(), delete_analysis()
+- [ ] T016 Create SavedAnalysis model in `src/kittiwake/models/saved_analysis.py` (or add to operations.py)
+
+### TUI Infrastructure
+
+- [x] T017 ✅ Create main App class in `src/kittiwake/app.py` with error clipboard functionality (ALREADY COMPLETE)
+- [ ] T018 Add async worker methods to App for DuckDB operations:
+  - `save_analysis_async(analysis)`
+  - `load_analysis_async(analysis_id)`
+  - `execute_operations_async(dataset, execute_all=False)`
+- [x] T019 ✅ [P] Create HelpOverlay widget in `src/kittiwake/widgets/help_overlay.py` (ALREADY COMPLETE - needs update)
+- [x] T020 ✅ Update HelpOverlay with new keybindings - COMPLETE 2026-01-09:
+  - Ctrl+E: Execute Next Operation
+  - Ctrl+Shift+E: Execute All Operations
+  - Ctrl+M: Toggle Execution Mode
+  - Update Operations Sidebar section with mode toggle
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -50,220 +85,296 @@
 
 ## Phase 3: User Story 1 - Load and View Data (Priority: P1) 🎯 MVP
 
-**Goal**: Enable users to launch kittiwake, load datasets (local files and remote URLs), view data in paginated table, and switch between multiple datasets (up to 10)
+**Goal**: Users can launch kittiwake, load datasets from files/URLs, view data in paginated table, navigate with keyboard, switch between datasets
 
-**Independent Test**: Launch `kw` bare and with `kw load file.csv`, verify data displays, keyboard navigation works, load multiple datasets and switch between them
+**Independent Test**: Launch `kw` and `kw load data.csv`, verify data displays, keyboard navigation works (arrows, Ctrl+Left/Right), load multiple datasets and switch between them
 
 ### Implementation for User Story 1
 
-- [ ] T015 [P] [US1] Implement DatasetTable widget in src/kittiwake/widgets/dataset_table.py (extends Textual DataTable with pagination support, 500-1000 rows per page)
-- [ ] T016 [P] [US1] Implement DatasetTabs widget in src/kittiwake/widgets/dataset_tabs.py (shows loaded datasets with active one highlighted, keyboard shortcuts for switching)
-- [ ] T017 [P] [US1] Implement HelpOverlay widget in src/kittiwake/widgets/help_overlay.py (keyboard shortcuts help with context-aware bindings from active screen)
-- [ ] T018 [US1] Create MainScreen in src/kittiwake/screens/main_screen.py (primary data exploration screen with DatasetTable, DatasetTabs, status bar, keyboard bindings)
-- [ ] T019 [US1] Implement dataset loading workflow in MainScreen: handle CLI args from `kw load`, load files async with progress indicators
-- [ ] T020 [US1] Add keyboard navigation bindings to MainScreen: arrow keys for data navigation, Tab for dataset switching, ? for help overlay
-- [ ] T021 [US1] Implement split pane mode in MainScreen (keyboard shortcut to display two datasets side-by-side using Textual Horizontal/Vertical containers)
-- [ ] T022 [US1] Add 10-dataset limit enforcement in DatasetSession with user prompts when limit reached
-- [ ] T023 [US1] Implement loading indicators and progress tracking for datasets >500ms load time using Textual reactive variables
-- [ ] T024 [US1] Add error handling for file not found, unsupported formats, network timeouts with clear error messages
-- [ ] T025 [US1] Wire up CLI commands in src/kittiwake/cli.py to launch MainScreen with empty workspace or pre-loaded datasets
+- [x] T021 ✅ [P] Implement CLI argument parsing in `src/kittiwake/cli.py` with `load` subcommand (ALREADY COMPLETE)
+- [x] T022 ✅ [P] Implement data loading service in `src/kittiwake/services/data_loader.py` for CSV, Parquet, JSON, remote URLs (ALREADY COMPLETE)
+- [x] T023 ✅ Implement MainScreen in `src/kittiwake/screens/main_screen.py` (ALREADY COMPLETE - needs keybinding updates)
+- [ ] T024 Update MainScreen keybindings:
+  - Add `Binding("ctrl+e", "execute_next", "Execute Next")`
+  - Add `Binding("ctrl+shift+e", "execute_all", "Execute All")`
+  - Add `Binding("ctrl+m", "toggle_execution_mode", "Toggle Mode")`
+- [x] T025 ✅ [P] Implement DatasetTable widget in `src/kittiwake/widgets/dataset_table.py` with keyboard navigation (ALREADY COMPLETE)
+- [ ] T026 Implement fast column navigation (Ctrl+Left/Right jumps 5 columns)
+- [ ] T027 Implement auto-scroll when cursor moves beyond visible columns
+- [ ] T028 Implement column width capping at 40 characters with ellipsis
+- [ ] T029 Implement Enter key to view full cell content in modal
+- [x] T030 ✅ [P] Implement DatasetTabs widget in `src/kittiwake/widgets/dataset_tabs.py` (ALREADY COMPLETE - needs update)
+- [ ] T031 Update DatasetTabs to show operation counts in labels: `data.csv (3⏸/5✓)`
+- [ ] T032 Implement 10-dataset limit enforcement with warnings at 8/9 datasets
+- [ ] T033 [P] Implement split pane mode for side-by-side dataset comparison
+- [ ] T034 Implement async data loading with progress indicators for 1M+ row datasets
+- [ ] T035 Handle CLI bulk load (cap at 10 datasets, warn about skipped files)
 
-**Checkpoint**: At this point, User Story 1 should be fully functional - users can load, view, and switch between datasets
+**Checkpoint**: User Story 1 complete - can load, view, and navigate datasets independently
 
 ---
 
 ## Phase 4: User Story 2 - Filter and Search Data (Priority: P2)
 
-**Goal**: Enable users to filter datasets with text search and column-specific conditions, combine multiple filters, and maintain independent filter state per dataset
+**Goal**: Users can filter and search data using left sidebar forms, operations queue in lazy mode or execute in eager mode, view/edit/reorder operations in right sidebar
 
-**Independent Test**: Load sample data, apply text search and column filters, verify filtered results, load second dataset and verify first dataset's filters are preserved
+**Independent Test**: Load dataset, apply filters/searches, verify operations queue (lazy) or execute (eager), execute queued operations with Ctrl+E / Ctrl+Shift+E, edit/remove/reorder operations
 
 ### Implementation for User Story 2
 
-- [ ] T026 [P] [US2] Create FilterModal widget in src/kittiwake/widgets/filter_modal.py (modal form with column dropdown, operator dropdown, value input per Modal Specifications section)
-- [ ] T027 [P] [US2] Implement CodeGenerator class in src/kittiwake/services/code_generator.py (generate_filter method that creates narwhals filter code from modal params)
-- [ ] T028 [P] [US2] Implement DisplayGenerator class in src/kittiwake/services/code_generator.py (format_filter method that creates human-readable filter descriptions)
-- [ ] T029 [US2] Add filter keyboard binding (f key) to MainScreen that opens FilterModal for active dataset
-- [ ] T030 [US2] Implement modal submit validation in FilterModal using sample data (first 10 rows) to verify filter code is valid
-- [ ] T031 [US2] Implement apply_operation method in Dataset entity to add Operation to operation_history and update current_frame
-- [ ] T032 [US2] Add Textual worker in MainScreen to execute filter operations in background thread (using @work decorator with exclusive=True)
-- [ ] T033 [US2] Display operation history in UI (sidebar or footer showing applied operations with clear all keyboard shortcut)
-- [ ] T034 [US2] Add text search across all columns (separate keyboard shortcut) that generates contains filter for each column with OR logic
-- [ ] T035 [US2] Implement clear filters keyboard shortcut that resets Dataset to original frame
-- [ ] T036 [US2] Add filtered row count display in status bar (e.g., "Showing 250 of 1000 rows")
+#### Sidebar Architecture (Partially Complete)
 
-**Checkpoint**: User Story 2 complete - filtering works independently on each dataset with preserved state
+- [x] T036 ✅ [P] Create FilterSidebar widget in `src/kittiwake/widgets/sidebars/filter_sidebar.py` (ALREADY COMPLETE)
+- [x] T037 ✅ [P] Create SearchSidebar widget in `src/kittiwake/widgets/sidebars/search_sidebar.py` (ALREADY COMPLETE)
+- [x] T038 ✅ Create OperationsSidebar widget in `src/kittiwake/widgets/sidebars/operations_sidebar.py` (ALREADY COMPLETE - needs major update)
+
+#### Operations Sidebar Enhancement (Lazy/Eager Mode)
+
+- [ ] T039 Add execution mode toggle button to OperationsSidebar header:
+  - Button with reactive `execution_mode: str = "lazy"` attribute
+  - Visual: `⚡ LAZY` (yellow/warning variant) or `▶ EAGER` (green/success variant)
+  - Clickable button + Ctrl+M keyboard shortcut support
+  - `watch_execution_mode()` to update button styling and notify user
+- [x] T040 ✅ Update `refresh_operations()` in OperationsSidebar to use icon + color coding - COMPLETE 2026-01-09:
+  - Queued: `⏳ {idx}. {operation.display}`
+  - Executed: `✓ {idx}. {operation.display}`
+  - Failed: `✗ {idx}. {operation.display}`
+  - Fixed duplicate widget ID bug with index-based IDs
+- [ ] T041 Implement operation edit functionality (reopen left sidebar with pre-filled form)
+- [ ] T042 Implement operation remove functionality with confirmation
+- [ ] T043 Implement operation reorder with Ctrl+Up/Down keyboard shortcuts
+- [ ] T044 Implement re-apply operations in new sequence when order changes
+
+#### Mode Toggle & Execution
+
+- [ ] T045 Create ModeSwitchPromptModal widget in `src/kittiwake/widgets/modals/mode_switch_modal.py`:
+  - 3-choice modal (Execute All / Clear All / Cancel)
+  - Keyboard shortcuts: 1/E, 2/C, 3/Esc
+  - Return choice to caller via `dismiss()`
+- [ ] T046 Implement `action_toggle_execution_mode()` in MainScreen:
+  - Check if switching lazy→eager with queued operations
+  - Show ModeSwitchPromptModal if needed
+  - Handle user choice (execute/clear/cancel)
+  - Switch mode immediately if no queued operations or eager→lazy
+- [x] T047 ✅ Implement `action_execute_next()` in MainScreen - COMPLETE 2026-01-09:
+  - Check if queued operations exist (no-op if empty)
+  - Call dataset.execute_next_queued() directly (no ExecutionManager yet)
+  - Update UI with result (notification, refresh sidebar/table)
+  - Handle execution errors (mark operation as failed, show error message)
+- [x] T048 ✅ Implement `action_execute_all()` in MainScreen - COMPLETE 2026-01-09:
+  - Check if queued operations exist (no-op if empty)
+  - Call dataset.execute_all_queued() directly (no ExecutionManager yet)
+  - Show summary notification (e.g., "Executed 3/5 operations")
+  - Handle errors (stop on first failure, preserve remaining queue)
+
+#### Operation Application
+
+- [ ] T049 Update Dataset.apply_operation() to respect execution_mode:
+  - If `eager`: call ExecutionManager.execute_next() immediately
+  - If `lazy`: queue operation with `state="queued"`, append to `queued_operations`
+- [ ] T050 Update FilterSidebar apply action to call Dataset.apply_operation()
+- [ ] T051 Update SearchSidebar apply action to call Dataset.apply_operation()
+- [ ] T052 Implement narwhals code generation in `src/kittiwake/services/narwhals_ops.py`:
+  - `generate_filter_code(params)` → "df = df.filter(...)"
+  - `generate_search_code(params)` → "df = df.filter(...)"
+  - `generate_select_code(params)` → "df = df.select([...])"
+  - (Add other operation types as needed)
+
+#### Independent State Management
+
+- [ ] T053 Ensure each Dataset preserves operations when switching datasets
+- [ ] T054 Implement operations history restoration when switching back to dataset
+- [ ] T055 Verify right sidebar shows correct operations for active dataset
+
+**Checkpoint**: User Story 2 complete - filter/search with lazy/eager modes, execution controls work independently
 
 ---
 
 ## Phase 5: User Story 3 - Aggregate and Summarize Data (Priority: P3)
 
-**Goal**: Enable users to compute summary statistics and grouped aggregations on numeric columns
+**Goal**: Users can compute summary statistics and grouped aggregations
 
-**Independent Test**: Load numeric data, select column, apply aggregation functions (sum, mean, count), verify correct calculations display
+**Independent Test**: Load dataset, select column, apply aggregation (sum/mean/count), verify results display correctly
 
 ### Implementation for User Story 3
 
-- [ ] T037 [P] [US3] Create AggregationPanel widget in src/kittiwake/widgets/aggregation_panel.py (displays aggregation results in dedicated panel)
-- [ ] T038 [P] [US3] Create AggregationModal widget in src/kittiwake/widgets/aggregation_modal.py (modal form with column dropdown, multi-select functions checklist, group_by multi-select)
-- [ ] T039 [P] [US3] Add generate_aggregate method to CodeGenerator in src/kittiwake/services/code_generator.py (generates narwhals group_by().agg() code)
-- [ ] T040 [P] [US3] Add format_aggregate method to DisplayGenerator in src/kittiwake/services/code_generator.py
-- [ ] T041 [US3] Add aggregation keyboard binding (a key) to MainScreen that opens AggregationModal
-- [ ] T042 [US3] Implement modal validation for numeric column requirements (sum/mean/std require numeric dtype)
-- [ ] T043 [US3] Wire up AggregationModal submit to create Operation and apply via worker thread
-- [ ] T044 [US3] Display aggregation results in AggregationPanel (can toggle between table view and aggregated view)
-- [ ] T045 [US3] Add export aggregation results keyboard shortcut (writes aggregated data to CSV)
+- [ ] T056 [P] Create AggregateSidebar widget in `src/kittiwake/widgets/sidebars/aggregate_sidebar.py`:
+  - Form: select column(s), choose aggregation functions (count, sum, mean, median, min, max, std)
+  - Group-by column selection (optional)
+  - Apply button to queue/execute aggregation operation
+- [ ] T057 [P] Implement aggregation code generation in narwhals_ops.py:
+  - `generate_aggregate_code(params)` → "df = df.group_by(...).agg(...)"
+- [ ] T058 Create summary results panel widget in `src/kittiwake/widgets/summary_panel.py`
+- [ ] T059 Implement aggregation results display in summary panel
+- [ ] T060 Add keybinding to open AggregateSidebar (e.g., Ctrl+A)
+- [ ] T061 Support exporting aggregation results to file
 
 **Checkpoint**: User Story 3 complete - aggregation and summarization work independently
 
 ---
 
-## Phase 6: User Story 7 - Manage and Export Saved Analyses (Priority: P3)
+## Phase 6: User Story 4 - Create Pivot Tables (Priority: P4)
 
-**Goal**: Enable users to save analyses with metadata, manage saved analyses (list/update/delete), load saved analyses, and export to marimo/Python/Jupyter formats
+**Goal**: Users can create pivot tables with row/column dimensions and aggregations
 
-**Independent Test**: Perform operations, save analysis with metadata, list saved analyses, update/delete, load saved analysis and verify dataset reloads with operations, export to all three formats and verify generated code executes
-
-### Implementation for User Story 7
-
-- [ ] T046 [P] [US7] Implement SavedAnalysis entity in src/kittiwake/models/saved_analysis.py (id, name, description, timestamps, operation_count, dataset_path, operations fields with to_dict/from_dict methods)
-- [ ] T047 [P] [US7] Implement SavedAnalysisRepository in src/kittiwake/services/persistence.py (save, update, delete, list_all, load_by_id methods with DuckDB WAL mode and threading.Lock for writes)
-- [ ] T048 [P] [US7] Implement ExportService in src/kittiwake/services/export_service.py (export_marimo, export_python, export_jupyter methods using Jinja2 templates)
-- [ ] T049 [P] [US7] Create SaveAnalysisModal widget in src/kittiwake/widgets/save_analysis_modal.py (form with name and description inputs)
-- [ ] T050 [P] [US7] Create SavedAnalysesScreen in src/kittiwake/screens/saved_analyses_screen.py (list all saved analyses with keyboard navigation, update/delete actions)
-- [ ] T051 [US7] Add save analysis keyboard binding (Ctrl+S) to MainScreen that opens SaveAnalysisModal
-- [ ] T052 [US7] Implement save workflow: validate name uniqueness, create SavedAnalysis from active dataset, persist to DuckDB
-- [ ] T053 [US7] Add view saved analyses keyboard binding to MainScreen that opens SavedAnalysesScreen
-- [ ] T054 [US7] Implement load saved analysis workflow: verify dataset_path accessible, reload dataset async, apply operations in sequence
-- [ ] T055 [US7] Add export keyboard binding in SavedAnalysesScreen (opens export modal with format selection: marimo/Python/Jupyter)
-- [ ] T056 [US7] Implement export workflow: check analysis is saved, prompt for output path, render template, handle file overwrite confirmation
-- [ ] T057 [US7] Add update analysis functionality in SavedAnalysesScreen (edit name/description, update modified_at timestamp)
-- [ ] T058 [US7] Add delete analysis functionality with confirmation prompt
-- [ ] T059 [US7] Add error handling for dataset_path not accessible when loading saved analysis (warn user, allow update path or delete)
-
-**Checkpoint**: User Story 7 complete - saved analyses management and export work end-to-end
-
----
-
-## Phase 7: User Story 4 - Create Pivot Tables (Priority: P4)
-
-**Goal**: Enable users to create pivot tables with configurable row/column dimensions and aggregation values
-
-**Independent Test**: Load sample data with categorical and numeric columns, create pivot table with row/column groupings, verify calculations
+**Independent Test**: Load dataset, activate pivot mode, select dimensions and values, verify pivot table displays with correct calculations
 
 ### Implementation for User Story 4
 
-- [ ] T060 [P] [US4] Create PivotModal widget in src/kittiwake/widgets/pivot_modal.py (modal form with row dimensions multi-select, column dimensions multi-select, values list with column+function pairs)
-- [ ] T061 [P] [US4] Add generate_pivot method to CodeGenerator in src/kittiwake/services/code_generator.py (generates narwhals pivot code or group_by workaround)
-- [ ] T062 [P] [US4] Add format_pivot method to DisplayGenerator in src/kittiwake/services/code_generator.py
-- [ ] T063 [US4] Add pivot keyboard binding (p key) to MainScreen that opens PivotModal
-- [ ] T064 [US4] Implement pivot modal validation (at least one dimension required, value columns must exist)
-- [ ] T065 [US4] Wire up PivotModal submit to create Operation and apply via worker
-- [ ] T066 [US4] Implement expand/collapse functionality for grouped rows in pivot table view (if narwhals supports or using custom rendering)
-- [ ] T067 [US4] Add save pivot configuration option (stores params for later reuse)
+- [ ] T062 [P] Create PivotSidebar widget in `src/kittiwake/widgets/sidebars/pivot_sidebar.py`:
+  - Form: select row dimensions, column dimensions, aggregation values
+  - Aggregation function selection (sum, mean, count, etc.)
+  - Apply button to queue/execute pivot operation
+- [ ] T063 [P] Implement pivot code generation in narwhals_ops.py:
+  - `generate_pivot_code(params)` → "df = df.pivot(...)"
+- [ ] T064 Create PivotTableWidget in `src/kittiwake/widgets/pivot_table.py`
+- [ ] T065 Implement expand/collapse functionality for pivot groups
+- [ ] T066 Add keybinding to open PivotSidebar (e.g., Ctrl+P)
+- [ ] T067 Support saving pivot configuration for later reload
 
 **Checkpoint**: User Story 4 complete - pivot tables work independently
 
 ---
 
-## Phase 8: User Story 5 - Merge and Join Datasets (Priority: P5)
+## Phase 7: User Story 5 - Merge and Join Datasets (Priority: P5)
 
-**Goal**: Enable users to combine two loaded datasets with inner/left/right/outer joins
+**Goal**: Users can merge two loaded datasets with join operations
 
-**Independent Test**: Load two CSV files with common key column, perform inner join, verify merged dataset
+**Independent Test**: Load two datasets, activate merge mode, select join columns and type, verify preview and merged result
 
 ### Implementation for User Story 5
 
-- [ ] T068 [P] [US5] Create JoinModal widget in src/kittiwake/widgets/join_modal.py (modal form with right dataset dropdown, left_on/right_on column selectors, join type radio buttons)
-- [ ] T069 [P] [US5] Create MergeScreen in src/kittiwake/screens/merge_screen.py (join wizard with preview before applying)
-- [ ] T070 [P] [US5] Add generate_join method to CodeGenerator in src/kittiwake/services/code_generator.py (generates narwhals join code)
-- [ ] T071 [P] [US5] Add format_join method to DisplayGenerator in src/kittiwake/services/code_generator.py
-- [ ] T072 [US5] Add join keyboard binding (j key) to MainScreen that opens JoinModal or MergeScreen
-- [ ] T073 [US5] Implement join modal validation (check columns exist in respective datasets, warn on type mismatches)
-- [ ] T074 [US5] Implement merge preview in MergeScreen (show first 100 rows of merged result before applying)
-- [ ] T075 [US5] Wire up merge confirmation to create Operation and apply to active dataset
-- [ ] T076 [US5] Add error handling for join key mismatches and missing values
+- [ ] T068 [P] Create JoinSidebar widget in `src/kittiwake/widgets/sidebars/join_sidebar.py`:
+  - Form: select second dataset, join columns from each, join type (inner/left/right/outer)
+  - Preview button to show sample merged result
+  - Apply button to execute join
+- [ ] T069 [P] Implement join code generation in narwhals_ops.py:
+  - `generate_join_code(params)` → "df = df.join(...)"
+- [ ] T070 Implement join type mismatch detection and warning
+- [ ] T071 Implement automatic type conversion (int↔float, string→category) where possible
+- [ ] T072 Add keybinding to open JoinSidebar (e.g., Ctrl+J)
+- [ ] T073 Handle errors when join keys don't match or datasets not loaded
 
 **Checkpoint**: User Story 5 complete - dataset merging works independently
 
 ---
 
-## Phase 9: User Story 6 - Save Analysis Workflows (Priority: P6)
+## Phase 8: User Story 6 - Save Analysis Workflows (Priority: P6)
 
-**Goal**: Enable users to save operation sequences as reusable workflows and apply to new datasets
+**Goal**: Users can save operation sequences as reusable workflows
 
-**Independent Test**: Perform sequence of operations, save workflow, load new dataset with same schema, apply workflow, verify operations execute
+**Independent Test**: Perform operations sequence, save workflow with name, load new dataset with same schema, apply workflow, verify operations execute
 
 ### Implementation for User Story 6
 
-- [ ] T077 [P] [US6] Implement Workflow entity in src/kittiwake/models/workflow.py (id, name, description, operations, required_columns, timestamps with to_dict/from_dict/apply_to_dataset/validate_schema methods)
-- [ ] T078 [P] [US6] Create workflow persistence in ~/.kittiwake/workflows/ directory as JSON files
-- [ ] T079 [P] [US6] Create SaveWorkflowModal widget in src/kittiwake/widgets/save_workflow_modal.py (form with name and description inputs)
-- [ ] T080 [P] [US6] Create WorkflowsScreen in src/kittiwake/screens/workflows_screen.py (list all workflows with apply/edit/delete actions)
-- [ ] T081 [US6] Add save workflow keyboard binding to MainScreen that opens SaveWorkflowModal
-- [ ] T082 [US6] Implement save workflow: capture operations from active dataset, extract required columns, persist as JSON
-- [ ] T083 [US6] Add view workflows keyboard binding to MainScreen that opens WorkflowsScreen
-- [ ] T084 [US6] Implement apply workflow: validate target dataset schema, show schema compatibility report, apply operations in sequence
-- [ ] T085 [US6] Add edit workflow functionality (modify individual operations, re-save)
-- [ ] T086 [US6] Implement workflow validation with clear error messages for missing/incompatible columns
+- [ ] T074 [P] Create SaveWorkflowModal widget in `src/kittiwake/widgets/modals/save_workflow_modal.py`:
+  - Form: workflow name, optional description
+  - Save button to persist workflow
+- [ ] T075 Implement workflow serialization (save operations sequence to JSON/YAML)
+- [ ] T076 Implement workflow loading and application to new datasets
+- [ ] T077 Implement workflow editing (modify steps and re-save)
+- [ ] T078 Add keybinding to save workflow (e.g., Ctrl+Shift+S)
+- [ ] T079 Validate target dataset schema matches workflow requirements
 
-**Checkpoint**: User Story 6 complete - workflow management works end-to-end
+**Checkpoint**: User Story 6 complete - workflows can be saved and reused independently
 
 ---
 
-## Phase 10: Additional Operations Modals (Cross-Cutting)
+## Phase 9: User Story 7 - Manage and Export Saved Analyses (Priority: P3)
 
-**Purpose**: Implement remaining 9 operation type modals from Modal Specifications (Phase 1.5 in plan.md)
+**Goal**: Users can save analyses, list/update/delete them, load analyses (reloads dataset + reapplies operations), export to Python/marimo/Jupyter notebooks
 
-- [ ] T087 [P] Create SortModal in src/kittiwake/widgets/sort_modal.py (columns multi-select with descending checkboxes) with keyboard binding (s key)
-- [ ] T088 [P] Create SelectColumnsModal in src/kittiwake/widgets/select_modal.py (columns multi-select checklist) with keyboard binding (c key)
-- [ ] T089 [P] Create DropColumnsModal in src/kittiwake/widgets/drop_modal.py (columns multi-select checklist) with keyboard binding (d+c sequence)
-- [ ] T090 [P] Create RenameColumnsModal in src/kittiwake/widgets/rename_modal.py (key-value pairs: old→new) with keyboard binding (r key)
-- [ ] T091 [P] Create CalculatedColumnModal in src/kittiwake/widgets/calculated_modal.py (new column name + expression builder) with keyboard binding (w key)
-- [ ] T092 [P] Create DropDuplicatesModal in src/kittiwake/widgets/unique_modal.py (subset columns, keep radio) with keyboard binding (u key)
-- [ ] T093 [P] Create FillNullModal in src/kittiwake/widgets/fill_null_modal.py (strategy dropdown, literal value) with keyboard binding (n+f sequence)
-- [ ] T094 [P] Create DropNullsModal in src/kittiwake/widgets/drop_nulls_modal.py (subset columns) with keyboard binding (n+d sequence)
-- [ ] T095 [P] Create SampleModal in src/kittiwake/widgets/sample_modal.py (n input, random/seed for sample) with keyboard bindings (h/t/m keys for head/tail/sample)
-- [ ] T096 Add corresponding generate_* methods to CodeGenerator for all 9 operation types in src/kittiwake/services/code_generator.py
-- [ ] T097 Add corresponding format_* methods to DisplayGenerator for all 9 operation types in src/kittiwake/services/code_generator.py
+**Independent Test**: Perform operations, save analysis with metadata, list analyses, update/delete analyses, load analysis (verify dataset reloads), export to all three formats, verify generated code executes
 
-**Checkpoint**: All 13 operation types have working modals and code generation
+### Implementation for User Story 7
+
+#### Saved Analyses Management
+
+- [ ] T080 [P] Create SaveAnalysisModal widget in `src/kittiwake/widgets/modals/save_analysis_modal.py`:
+  - Form: analysis name, description
+  - Save button to persist to DuckDB
+  - Validation: unique name check
+- [ ] T081 [P] Create SavedAnalysesListScreen in `src/kittiwake/screens/saved_analyses_list_screen.py`:
+  - List all saved analyses with metadata (name, description, created_at, modified_at, operation_count)
+  - Keyboard navigation (up/down to select)
+  - Actions: Load, Update, Delete, Export
+- [ ] T082 Implement `action_save_analysis()` in MainScreen:
+  - Show SaveAnalysisModal
+  - Create SavedAnalysis entity with current dataset operations
+  - Call `DuckDBManager.save_analysis()` in worker thread
+  - Show success/error notification
+- [ ] T083 Implement `action_load_saved_analysis()` in MainScreen:
+  - Show SavedAnalysesListScreen
+  - User selects analysis
+  - Reload dataset from `dataset_path` (async with progress)
+  - Reapply all operations in sequence (respecting execution mode)
+  - Show in main view
+- [ ] T084 Implement update analysis functionality:
+  - Allow editing name/description
+  - Update `modified_at` timestamp
+  - Call `DuckDBManager.update_analysis()` in worker thread
+- [ ] T085 Implement delete analysis functionality:
+  - Show confirmation modal
+  - Call `DuckDBManager.delete_analysis()` in worker thread
+  - Refresh analyses list
+
+#### Export to Notebooks
+
+- [ ] T086 Generate contract files in `specs/001-tui-data-explorer/contracts/`:
+  - [P] `export-python.jinja2` - Python script template
+  - [P] `export-marimo.jinja2` - marimo notebook template
+  - [P] `export-jupyter.jinja2` - Jupyter notebook template
+  - [P] `operations-schema.json` - Operation serialization schema
+  - [P] `cli-interface.md` - CLI usage documentation
+  - [P] `saved-analysis-schema.sql` - DuckDB table schema
+- [ ] T087 [P] Create ExportModal widget in `src/kittiwake/widgets/modals/export_modal.py`:
+  - Radio buttons: Python Script / marimo Notebook / Jupyter Notebook
+  - File path input with browse button
+  - Export button
+- [ ] T088 [P] Implement export service in `src/kittiwake/services/export.py`:
+  - Setup Jinja2 environment loading templates from contracts/
+  - Method: `export_to_python(analysis)` → render Python template
+  - Method: `export_to_marimo(analysis)` → render marimo template
+  - Method: `export_to_jupyter(analysis)` → render Jupyter template
+- [ ] T089 Implement `action_export_analysis()` in SavedAnalysesListScreen:
+  - Require analysis to be saved first (show error if not)
+  - Show ExportModal
+  - User selects format and path
+  - Check if file exists (prompt to overwrite/rename/cancel)
+  - Render template and write to file
+  - Show success notification with file path
+- [ ] T090 Add keybinding to export analysis (e.g., Ctrl+X)
+
+#### Edge Cases
+
+- [ ] T091 Handle dataset path unavailable when loading analysis (show warning, allow updating path)
+- [ ] T092 Handle DuckDB database corruption (display error, offer to reinitialize with data loss warning)
+- [ ] T093 Prevent export of unsaved analyses (show "Save first" message)
+- [ ] T094 Handle duplicate analysis names (auto-version with timestamp suffix or require unique name)
+
+**Checkpoint**: User Story 7 complete - saved analyses and export functionality work independently
 
 ---
 
-## Phase 11: Undo/Redo & Operation Editing (Cross-Cutting)
-
-**Purpose**: Enable operation history management
-
-- [ ] T098 [P] Implement undo method in Dataset entity (pop operation, restore from checkpoint or replay from start)
-- [ ] T099 [P] Implement redo method in Dataset entity (reapply undone operation)
-- [ ] T100 [P] Implement checkpoint strategy in Dataset (cache DataFrame state every 10 operations)
-- [ ] T101 Add undo/redo keyboard bindings to MainScreen (Ctrl+Z, Ctrl+Shift+Z)
-- [ ] T102 Implement operation editing: click operation in history → reopen modal with pre-filled params → update operation on submit
-- [ ] T103 Add visual operation history panel in MainScreen showing all applied operations with edit/delete actions
-
-**Checkpoint**: Operation history management complete
-
----
-
-## Phase 12: Polish & Cross-Cutting Concerns
+## Phase 10: Polish & Cross-Cutting Concerns
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T104 [P] Add terminal resize handling in MainScreen (layout adapts within 100ms per SC-008)
-- [ ] T105 [P] Implement light/dark theme toggle with keyboard shortcut
-- [ ] T106 [P] Add comprehensive error messages for all edge cases from spec.md Edge Cases section
-- [ ] T107 [P] Optimize DataTable rendering for large datasets (verify <100ms response per SC-002)
-- [ ] T108 [P] Add memory usage monitoring and warnings when approaching limits
-- [ ] T109 [P] Implement operation cancellation UI (progress modal with cancel button for >500ms operations)
-- [ ] T110 [P] Add dataset close functionality (keyboard shortcut to remove dataset from session and free memory)
-- [ ] T111 [P] Update README.md with installation instructions, quickstart examples, and feature overview
-- [ ] T112 [P] Generate API documentation from docstrings using Sphinx or similar
-- [ ] T113 [P] Add logging throughout application using Python logging module (DEBUG/INFO/ERROR levels)
-- [ ] T114 [P] Performance profiling: verify SC-001 (1GB CSV first page <3s), SC-013 (DuckDB <200ms), SC-014 (dataset switching <150ms)
-- [ ] T115 Run through quickstart.md validation with fresh environment
-- [ ] T116 Code review and refactoring pass for consistency and maintainability
-- [ ] T117 Security audit: ensure eval() in Operation.apply uses restricted namespace, no SQL injection in DuckDB queries
+- [ ] T095 [P] Create quickstart.md in `specs/001-tui-data-explorer/`:
+  - Installation instructions (uv install, pip install)
+  - Basic workflow: launch kw, load data, apply operations, execute (lazy mode), toggle to eager
+  - Save and export analysis
+  - Keyboard shortcuts reference table
+- [ ] T096 [P] Update README.md with feature overview and quickstart link
+- [ ] T097 [P] Add docstrings to all public methods
+- [ ] T098 Code cleanup: remove deprecated modal-based UI code (filter_modal.py, search_modal.py if fully replaced)
+- [ ] T099 Performance optimization: profile large dataset operations (1M+ rows), optimize narwhals query generation
+- [ ] T100 [P] Security review: validate user input in all sidebar forms, check for path traversal in file operations
+- [ ] T101 Run through quickstart.md validation with fresh environment
+- [ ] T102 [P] Create marimo documentation notebooks in `docs/examples/` (if documentation is explicitly requested):
+  - basic-usage.py - Load, filter, visualize
+  - lazy-eager-modes.py - Demonstrate mode toggle and execution
+  - export-workflows.py - Save and export analyses
 
 ---
 
@@ -271,130 +382,108 @@
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: No dependencies - can start immediately
-- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
+- **Setup (Phase 1)**: ✅ COMPLETE
+- **Foundational (Phase 2)**: In Progress - BLOCKS all user stories
+  - Key pending: ExecutionManager, DuckDB setup, Operation.to_code(), Dataset model updates
 - **User Stories (Phase 3-9)**: All depend on Foundational phase completion
-  - User stories can then proceed in parallel (if staffed)
-  - Or sequentially in priority order (P1 → P2 → P3 → P4 → P5 → P6)
-- **Additional Operations (Phase 10)**: Can start after US1-US2 complete (requires MainScreen and CodeGenerator foundation)
-- **Undo/Redo (Phase 11)**: Can start after US2 complete (requires Operation infrastructure)
-- **Polish (Phase 12)**: Depends on all desired user stories being complete
+  - Can proceed in parallel if staffed or sequentially by priority (P1 → P2 → P3...)
+- **Polish (Phase 10)**: Depends on all desired user stories being complete
 
 ### User Story Dependencies
 
-- **User Story 1 (P1) - Load and View**: Can start after Foundational (Phase 2) - No dependencies on other stories
-- **User Story 2 (P2) - Filter and Search**: Can start after Foundational (Phase 2) - Independent of other stories
-- **User Story 3 (P3) - Aggregate**: Can start after Foundational (Phase 2) - Independent of other stories
-- **User Story 7 (P3) - Saved Analyses**: Can start after Foundational (Phase 2) - Independent of other stories (uses existing operations)
-- **User Story 4 (P4) - Pivot Tables**: Can start after Foundational (Phase 2) - Independent of other stories
-- **User Story 5 (P5) - Merge/Join**: Requires US1 complete (needs multiple datasets loaded)
-- **User Story 6 (P6) - Workflows**: Requires US2-US4 complete (needs operations to create workflows from)
+- **US1 (P1)**: Can start after Foundational - No dependencies on other stories ⚠️ **MVP TARGET**
+- **US2 (P2)**: Can start after Foundational - Builds on US1 (requires data loading) but independently testable
+- **US3 (P3)**: Can start after Foundational - Builds on US1/US2 (requires data + operations) but independently testable
+- **US4 (P4)**: Can start after Foundational - Builds on US1/US3 (requires aggregation concepts)
+- **US5 (P5)**: Can start after Foundational - Requires US1 (multi-dataset loading)
+- **US6 (P6)**: Can start after Foundational - Builds on US2 (operations sequences)
+- **US7 (P3)**: Can start after US2 complete - Requires operations infrastructure and DuckDB persistence
 
-### Within Each User Story
+### Critical Path for MVP (US1 + US2 with Lazy/Eager)
 
-- Models before services
-- Services before widgets/screens
-- Widgets before screen integration
-- Core implementation before error handling
-- Story complete before moving to next priority
+**Minimum viable feature set**:
+
+1. ✅ Phase 1: Setup (COMPLETE)
+2. Phase 2: Foundational (IN PROGRESS)
+   - T005-T009: Update models for lazy/eager mode
+   - T012-T013: ExecutionManager service
+   - T014-T016: DuckDB persistence (can defer to US7)
+   - T017-T020: TUI infrastructure updates
+3. Phase 3: US1 - Load and View Data
+   - T024-T035: Complete data loading and viewing
+4. Phase 4: US2 - Filter and Search with Lazy/Eager
+   - T039-T055: Sidebar enhancements, mode toggle, execution controls
+
+**Estimated MVP**: ~45 tasks (Foundational + US1 + US2)
 
 ### Parallel Opportunities
 
-**Phase 1 (Setup)**: T001, T002, T003, T004 can all run in parallel
-
-**Phase 2 (Foundational)**:
-- T006, T007, T008, T009, T011, T012, T013, T014 can run in parallel
-- T005 and T010 depend on nothing and can run in parallel with others
-
-**Phase 3 (US1)**: T015, T016, T017 can run in parallel (different widget files)
-
-**Phase 4 (US2)**: T026, T027, T028 can run in parallel (different files)
-
-**Phase 5 (US3)**: T037, T038, T039, T040 can run in parallel (different files)
-
-**Phase 6 (US7)**: T046, T047, T048, T049, T050 can run in parallel (different files)
-
-**Phase 7 (US4)**: T060, T061, T062 can run in parallel
-
-**Phase 8 (US5)**: T068, T069, T070, T071 can run in parallel
-
-**Phase 9 (US6)**: T077, T078, T079, T080 can run in parallel
-
-**Phase 10 (Modals)**: T087-T095 can all run in parallel (different widget files)
-
-**Phase 11 (Undo/Redo)**: T098, T099, T100 can run in parallel (same file but different methods)
-
-**Phase 12 (Polish)**: T104-T114, T116, T117 can run in parallel (different concerns)
+- All tasks marked [P] can run in parallel (different files, no shared state)
+- Once Foundational completes, multiple user stories can be developed in parallel by different developers
+- Within each user story, models marked [P] can be developed in parallel
+- Sidebar widgets for different operation types can be developed in parallel
 
 ---
 
 ## Implementation Strategy
 
-### MVP First (User Story 1 Only)
+### MVP First (US1 + US2 Only)
 
-1. Complete Phase 1: Setup (4 tasks)
-2. Complete Phase 2: Foundational (10 tasks) - CRITICAL
-3. Complete Phase 3: User Story 1 (11 tasks)
-4. **STOP and VALIDATE**: Test User Story 1 independently
-5. Deploy/demo MVP
+1. ✅ Complete Phase 1: Setup
+2. Complete Phase 2: Foundational (focus on lazy/eager infrastructure)
+3. Complete Phase 3: US1 - Load and View Data
+4. Complete Phase 4: US2 - Filter and Search with Lazy/Eager Execution
+5. **STOP and VALIDATE**: Test MVP independently (load, filter, lazy/eager modes work)
+6. Demo/deploy MVP
 
-**Total MVP tasks**: 25 tasks
+### Incremental Delivery
 
-### Incremental Delivery (Recommended)
-
-1. **Foundation** (Phase 1-2): 14 tasks → Foundation ready
-2. **MVP** (Phase 3 - US1): 11 tasks → Basic data loading and viewing works
-3. **Filtering** (Phase 4 - US2): 11 tasks → Data exploration capability added
-4. **Analysis** (Phase 5 - US3): 9 tasks → Summarization capabilities added
-5. **Persistence** (Phase 6 - US7): 14 tasks → Save and export work
-6. **Advanced Features** (Phase 7-9): 29 tasks → Pivot, join, workflows
-7. **Complete Operations** (Phase 10): 11 tasks → All operation types
-8. **History Management** (Phase 11): 6 tasks → Undo/redo complete
-9. **Polish** (Phase 12): 14 tasks → Production ready
-
-**Total tasks**: 119 tasks
+1. ✅ Setup complete
+2. Foundational → Foundation ready
+3. Add US1 → Test independently → Deploy/Demo (Basic viewer!)
+4. Add US2 → Test independently → Deploy/Demo (MVP with lazy/eager!)
+5. Add US7 → Test independently → Deploy/Demo (Save & export!)
+6. Add US3 → Test independently → Deploy/Demo (Aggregations!)
+7. Add US4-US6 as needed
 
 ### Parallel Team Strategy
 
-With 3 developers after Foundational phase completes:
+With multiple developers:
 
-- **Developer A**: User Story 1 (Phase 3) → User Story 4 (Phase 7) → Phase 10 modals (T087-T091)
-- **Developer B**: User Story 2 (Phase 4) → User Story 5 (Phase 8) → Phase 10 modals (T092-T095)
-- **Developer C**: User Story 3 (Phase 5) + User Story 7 (Phase 6) → User Story 6 (Phase 9) → Phase 11 undo/redo
-
-Then all converge on Phase 12 (Polish)
+1. Team completes Setup + Foundational together
+2. Once Foundational is done:
+   - Developer A: US1 (Load and View)
+   - Developer B: US2 (Filter and Search)
+   - Developer C: US7 (Saved Analyses) - requires DuckDB from Foundational
+3. Stories integrate and test independently
 
 ---
 
-## Summary
+## Progress Tracking
 
-- **Total Tasks**: 119
-- **Tasks per User Story**:
-  - US1 (Load and View): 11 tasks
-  - US2 (Filter and Search): 11 tasks
-  - US3 (Aggregate): 9 tasks
-  - US7 (Saved Analyses): 14 tasks
-  - US4 (Pivot): 8 tasks
-  - US5 (Merge/Join): 9 tasks
-  - US6 (Workflows): 10 tasks
-  - Additional Operations: 11 tasks
-  - Undo/Redo: 6 tasks
-  - Setup + Foundation: 14 tasks
-  - Polish: 14 tasks
+**Phase Completion Status**:
 
-- **Parallel Opportunities**: 42 tasks marked [P] can run in parallel within their phases
-- **Independent Test Criteria**: Each user story has clear acceptance criteria from spec.md
-- **MVP Scope**: Phase 1-3 (User Story 1: Load and View Data) = 25 tasks
-- **Format Validation**: ✅ All tasks follow checklist format with checkbox, ID, [P]/[Story] markers, and file paths
+- [x] Phase 1: Setup - ✅ **COMPLETE**
+- [ ] Phase 2: Foundational - 🔄 **IN PROGRESS** (70% complete - T005-T009, T020 done; need T011-T013, T018)
+- [ ] Phase 3: US1 - 🔄 **IN PROGRESS** (70% complete - basic loading works, need enhancements)
+- [ ] Phase 4: US2 - 🔄 **IN PROGRESS** (55% complete - sidebars work, T040, T047-T048 done; need mode toggle, edit/remove operations)
+- [ ] Phase 5: US3 - ⏸ **NOT STARTED**
+- [ ] Phase 6: US4 - ⏸ **NOT STARTED**
+- [ ] Phase 7: US5 - ⏸ **NOT STARTED**
+- [ ] Phase 8: US6 - ⏸ **NOT STARTED**
+- [ ] Phase 9: US7 - ⏸ **NOT STARTED** (DuckDB infrastructure ready from Foundational)
+- [ ] Phase 10: Polish - ⏸ **NOT STARTED**
+
+**MVP Progress**: ~40% (Core lazy/eager execution working! Need: ExecutionManager, mode toggle UI, operation editing)
 
 ---
 
 ## Notes
 
-- All tasks include exact file paths for clarity
-- [P] marker indicates parallelizable tasks (different files, no dependencies)
-- [Story] marker maps tasks to user stories for traceability
-- Each phase has clear checkpoints for validation
-- Task IDs are sequential (T001-T117) for easy reference
-- Tasks are sized to be completable in 2-4 hours each
-- Commit after completing each task or logical group
+- [P] tasks = different files, no dependencies
+- [Story] label maps task to specific user story for traceability
+- Each user story should be independently completable and testable
+- Commit after each task or logical group
+- Stop at any checkpoint to validate story independently
+- **Lazy/eager execution mode is core to US2** - not optional
+- **Focus on MVP first**: US1 + US2 provide complete basic workflow
