@@ -1,6 +1,7 @@
 """Dataset table widget with pagination support."""
 
 from rich.text import Text
+from textual import work
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.message import Message
@@ -230,7 +231,7 @@ class DatasetTable(Container):
             self.current_page = self.total_pages - 1
             self._load_page()
 
-    async def on_data_table_header_selected(
+    def on_data_table_header_selected(
         self, event: DataTable.HeaderSelected
     ) -> None:
         """Handle column header click to open quick filter modal.
@@ -238,8 +239,6 @@ class DatasetTable(Container):
         Args:
             event: HeaderSelected event with column information
         """
-        from .modals import ColumnHeaderQuickFilter
-        
         # Get column information
         column_key = str(event.column_key)
         
@@ -249,6 +248,19 @@ class DatasetTable(Container):
             
         dtype = self.dataset.schema.get(column_key, "Unknown")
         
+        # Launch worker to show modal (async operation)
+        self._show_quick_filter_modal(column_key, dtype)
+    
+    @work(exclusive=True)
+    async def _show_quick_filter_modal(self, column_key: str, dtype: str) -> None:
+        """Show quick filter modal in a worker (async context).
+        
+        Args:
+            column_key: Column name
+            dtype: Column data type
+        """
+        from .modals import ColumnHeaderQuickFilter
+        
         # Open quick filter modal with pre-populated column
         result = await self.app.push_screen_wait(
             ColumnHeaderQuickFilter(column_key, dtype)
@@ -257,7 +269,6 @@ class DatasetTable(Container):
         # If user submitted a filter (not cancelled)
         if result:
             # Post message to parent (main screen) to handle filter creation
-            # The message will contain the operation dict
             self.post_message(self.QuickFilterRequested(result))
     
     class QuickFilterRequested(Message):
