@@ -35,6 +35,10 @@ A data analyst opens kittiwake in their terminal using the `kw` command. They ca
 16. **Given** dataset has more columns than fit on screen, **When** user navigates right beyond visible columns, **Then** viewport automatically scrolls to show the next columns
 17. **Given** data is displayed with many columns, **When** user presses Ctrl+Right, **Then** cursor jumps 5 columns to the right
 18. **Given** data is displayed with many columns, **When** user presses Ctrl+Left, **Then** cursor jumps 5 columns to the left
+19. **Given** user has performed operations on a dataset, **When** source file is updated on disk and user reloads current dataset, **Then** source file is re-read, current operations (queued and executed) are preserved, and operations are re-applied in sequence to refreshed data
+20. **Given** dataset source file is deleted or moved, **When** user tries to reload current dataset, **Then** error displays showing path and options: (a) Remove dataset from session, (b) Update dataset path
+21. **Given** dataset source file has incompatible schema changes when user reloads, **When** an operation fails due to missing column, **Then** error displays with operation name and options: (a) Clear operations and use refreshed schema, (b) Cancel reload, keep old data view
+22. **Given** user reloads dataset while operations are executing, **When** reload is triggered, **Then** system blocks reload until current execution completes, then queues reload as next operation or executes immediately depending on execution mode
 
 ---
 
@@ -150,6 +154,10 @@ A user has performed several exploratory analyses and wants to save specific ana
 
 ### Edge Cases
 
+- What happens when user reloads current dataset? System re-reads source file from its stored path, preserves current operations queue (both queued and executed), then re-operations them in sequence to the refreshed data
+- What happens when dataset source file is deleted or moved when user tries to reload? Display error: "Source file no longer accessible: <path>. Options: (a) Remove dataset from session, (b) Update dataset path"
+- What happens when dataset source file changed in incompatible way (e.g., columns renamed, schema changed) when user reloads? Attempt to re-apply operations; if any operation fails due to schema mismatch, display error: "Reload failed: Operation '<op_name>' references column that no longer exists. Options: (a) Clear operations and use refreshed schema, (b) Cancel reload, keep old data view"
+- What happens when reloading a dataset while operations are executing? Block reload operation until current execution completes, then queue reload as next operation or execute immediately depending on current execution mode
 - What happens when a file is too large to fit in memory? System should use lazy evaluation (via narwhals) and paginate results.
 - What happens when a remote data source is unreachable? Display clear error message with option to retry or switch to cached data.
 - What happens when user tries to aggregate non-numeric columns? Show appropriate warning and suggest compatible operations (count, unique values).
@@ -197,11 +205,12 @@ A user has performed several exploratory analyses and wants to save specific ana
 - **FR-051**: System MUST support `kw load` subcommand accepting file path(s) and URL(s) as positional arguments (e.g., `kw load file1.csv file2.json https://example.com/data.parquet`)
 - **FR-052**: System MUST display an empty workspace with load instructions when launched with bare `kw` command
 - **FR-053**: System MUST allow users to load multiple datasets during a session
-- **FR-054**: System MUST maintain one "active" dataset displayed in the main view at any time
+- **FR-054**: System MUST maintain one "active" dataset displayed in main view at any time
 - **FR-055**: System MUST provide keyboard shortcuts to switch between loaded datasets
 - **FR-056**: System MUST support split pane mode to display two datasets side-by-side
-- **FR-057**: System MUST load all CLI-specified datasets at startup via `kw load`, displaying the first in the main view
+- **FR-057**: System MUST load all CLI-specified datasets at startup via `kw load`, displaying the first in main view
 - **FR-063**: System MUST enforce a maximum limit of 10 simultaneously loaded datasets with: (a) prevention when limit reached, (b) visual indicators (tabs or list) showing all loaded datasets with active one highlighted, (c) prompt to close existing dataset before adding new one
+- **FR-064**: System MUST allow users to reload currently active dataset from its original source file while preserving the current operations queue, then re-apply those operations to the refreshed data
 
 **User Interface:**
 - **FR-006**: System MUST provide keyboard-only navigation for all features
@@ -347,6 +356,20 @@ A user has performed several exploratory analyses and wants to save specific ana
 - **SC-019**: Users can queue 10+ operations in lazy mode, execute them one-by-one (Ctrl+E) or all at once (Ctrl+Shift+E), and switch between lazy/eager modes within 3 total interactions
 
 ## Clarifications
+
+### Session 2026-01-10 (Reload Current Dataset)
+
+**Context**: User requested ability to reload currently active dataset from its original source file.
+
+**Questions and Answers**:
+
+1. **Q**: When user reloads current dataset, should operations be cleared or preserved?
+   - **A**: Hot reload behavior - re-read source file while preserving current operations queue, then re-apply them to refreshed data
+
+**Integration**:
+- Added FR-064: System MUST allow users to reload currently active dataset from its original source file while preserving the current operations queue, then re-apply those operations to the refreshed data
+- Added edge cases for reload functionality: source file deleted/moved, schema incompatibility, concurrent execution
+- Added acceptance scenarios 19-22 for User Story 1 covering reload workflow
 
 ### Session 2026-01-09 (Lazy/Eager Execution Mode)
 

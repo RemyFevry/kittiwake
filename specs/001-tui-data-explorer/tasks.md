@@ -311,7 +311,14 @@
   - Reload dataset from `dataset_path` (async with progress)
   - Reapply all operations in sequence (respecting execution mode)
   - Show in main view
-- [ ] T084 Implement update analysis functionality - PARTIAL (edit action exists but not fully wired):
+- [ ] T084 Implement `action_reload_dataset()` in MainScreen - NEEDS IMPLEMENTATION:
+  - Add keybinding (e.g., Ctrl+R)
+  - Re-read currently active dataset from its original source file path
+  - Preserve current operations (both queued and executed) in dataset
+  - Re-apply all operations in sequence to refreshed data
+  - Handle errors: source file deleted/moved, schema incompatibility
+  - Show success/error notifications
+- [ ] T085 Implement update analysis functionality - PARTIAL (edit action exists but not fully wired):
   - Allow editing name/description
   - Update `modified_at` timestamp
   - Call `DuckDBManager.update_analysis()` in worker thread
