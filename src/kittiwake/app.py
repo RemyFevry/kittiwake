@@ -166,6 +166,32 @@ class KittiwakeApp(App):
         padding: 1;
         text-align: center;
     }
+
+    /* Column type colors - using Textual semantic variables */
+    DataTable .column-type-numeric {
+        color: $primary;
+        text-style: bold;
+    }
+
+    DataTable .column-type-text {
+        color: $success;
+        text-style: bold;
+    }
+
+    DataTable .column-type-date {
+        color: $warning;
+        text-style: bold;
+    }
+
+    DataTable .column-type-boolean {
+        color: $accent;
+        text-style: bold;
+    }
+
+    DataTable .column-type-unknown {
+        color: $text-muted;
+        text-style: bold;
+    }
     """
         + HELP_OVERLAY_CSS
     )

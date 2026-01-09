@@ -1,11 +1,14 @@
 """Dataset table widget with pagination support."""
 
+from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive
 from textual.widgets import DataTable, Label
 
 from ..models.dataset import Dataset
+from ..services.type_detector import detect_column_type_category
+from ..utils.type_colors import get_type_color, get_type_icon
 
 
 class DatasetTable(Container):
@@ -109,7 +112,7 @@ class DatasetTable(Container):
             schema = self.dataset.schema
             for col_name in page_data.columns:
                 col_type = schema.get(col_name, "Unknown")
-                header = f"{col_name}\n({col_type})"
+                header = self._create_column_header(col_name, col_type)
                 self.data_table.add_column(header, key=col_name)
         except Exception:
             # Fallback: just use column names
@@ -139,6 +142,31 @@ class DatasetTable(Container):
             return
 
         self._update_status()
+
+    def _create_column_header(self, col_name: str, dtype: str) -> Text:
+        """Create styled header with type indicator.
+        
+        Args:
+            col_name: Column name
+            dtype: Narwhals dtype string
+            
+        Returns:
+            Rich Text object with styled header
+        """
+        # Detect type category
+        type_category = detect_column_type_category(dtype)
+        
+        # Get visual indicators
+        icon = get_type_icon(type_category)
+        color = get_type_color(type_category)
+        
+        # Build styled header
+        header = Text()
+        header.append(f"{icon} ", style=f"bold {color}")
+        header.append(col_name, style=color)
+        header.append(f"\n({dtype})", style="dim")
+        
+        return header
 
     def _update_status(self, error: str | None = None) -> None:
         """Update status label with pagination info."""

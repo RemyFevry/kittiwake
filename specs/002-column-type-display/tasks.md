@@ -26,8 +26,8 @@ Single project structure:
 
 **Purpose**: Project initialization and configuration for type display feature
 
-- [ ] T001 Review existing codebase structure in src/kittiwake/ for integration points
-- [ ] T002 Verify narwhals schema API availability in existing Dataset model
+- [X] T001 Review existing codebase structure in src/kittiwake/ for integration points
+- [X] T002 Verify narwhals schema API availability in existing Dataset model
 
 ---
 
@@ -37,10 +37,10 @@ Single project structure:
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 [P] Create type detection service in src/kittiwake/services/type_detector.py
-- [ ] T004 [P] Create type configuration constants in src/kittiwake/utils/type_colors.py
-- [ ] T005 Create contracts/type-mappings.json from TYPE_MAPPINGS configuration
-- [ ] T006 Validate type-mappings.json contract against configuration in src/kittiwake/utils/type_colors.py
+- [X] T003 [P] Create type detection service in src/kittiwake/services/type_detector.py
+- [X] T004 [P] Create type configuration constants in src/kittiwake/utils/type_colors.py
+- [X] T005 Create contracts/type-mappings.json from TYPE_MAPPINGS configuration
+- [X] T006 Validate type-mappings.json contract against configuration in src/kittiwake/utils/type_colors.py
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -54,14 +54,14 @@ Single project structure:
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Implement detect_column_type_category() function in src/kittiwake/services/type_detector.py
-- [ ] T008 [US1] Define TYPE_MAPPINGS configuration with 5 type categories in src/kittiwake/utils/type_colors.py
-- [ ] T009 [US1] Define get_type_icon() helper function in src/kittiwake/utils/type_colors.py
-- [ ] T010 [US1] Define get_type_color() helper function in src/kittiwake/utils/type_colors.py
-- [ ] T011 [US1] Modify DatasetTable._create_column_header() to generate Rich Text headers with type styling in src/kittiwake/widgets/dataset_table.py
-- [ ] T012 [US1] Update DatasetTable.load_dataset() to use styled headers for all columns in src/kittiwake/widgets/dataset_table.py
-- [ ] T013 [US1] Add CSS classes for type colors in src/kittiwake/app.py (numeric, text, date, boolean, unknown)
-- [ ] T014 [US1] Add type legend section to help overlay in src/kittiwake/widgets/help_overlay.py
+- [X] T007 [US1] Implement detect_column_type_category() function in src/kittiwake/services/type_detector.py
+- [X] T008 [US1] Define TYPE_MAPPINGS configuration with 5 type categories in src/kittiwake/utils/type_colors.py
+- [X] T009 [US1] Define get_type_icon() helper function in src/kittiwake/utils/type_colors.py
+- [X] T010 [US1] Define get_type_color() helper function in src/kittiwake/utils/type_colors.py
+- [X] T011 [US1] Modify DatasetTable._create_column_header() to generate Rich Text headers with type styling in src/kittiwake/widgets/dataset_table.py
+- [X] T012 [US1] Update DatasetTable.load_dataset() to use styled headers for all columns in src/kittiwake/widgets/dataset_table.py
+- [X] T013 [US1] Add CSS classes for type colors in src/kittiwake/app.py (numeric, text, date, boolean, unknown)
+- [X] T014 [US1] Add type legend section to help overlay in src/kittiwake/widgets/help_overlay.py
 
 **Checkpoint**: Column headers should display with colored type icons when dataset is loaded. All 5 type categories should be visually distinct.
 
