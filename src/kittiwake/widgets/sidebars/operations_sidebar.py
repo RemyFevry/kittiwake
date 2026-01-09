@@ -17,6 +17,7 @@ class OperationsSidebar(Vertical):
         - Ctrl+Up/Down: Move operation up/down in sequence
         - Enter: Edit selected operation
         - Delete: Remove selected operation
+        - Ctrl+Shift+X: Clear all operations
     - Auto-shows when first operation is applied
     - Auto-hides when all operations are removed
 
@@ -31,7 +32,7 @@ class OperationsSidebar(Vertical):
         Binding("ctrl+down", "move_down", "Move Down"),
         Binding("enter", "edit_operation", "Edit"),
         Binding("delete", "remove_operation", "Remove"),
-        Binding("ctrl+c", "clear_all", "Clear All"),
+        Binding("ctrl+shift+x", "clear_all", "Clear All"),  # Changed from ctrl+c to avoid conflict with copy on French Mac
     ]
 
     def __init__(self, **kwargs):

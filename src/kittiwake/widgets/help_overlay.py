@@ -60,8 +60,10 @@ class HelpOverlay(ModalScreen):
                 # Data Operations section
                 yield Label("Data Operations", classes="help_section_title")
                 with Grid(classes="help_section"):
-                    yield Label("F", classes="help_key")
+                    yield Label("Ctrl+F", classes="help_key")
                     yield Label("Filter rows", classes="help_desc")
+                    yield Label("Ctrl+H", classes="help_key")
+                    yield Label("Search text", classes="help_desc")
                     yield Label("A", classes="help_key")
                     yield Label("Aggregate (group by)", classes="help_desc")
                     yield Label("P", classes="help_key")
@@ -113,6 +115,18 @@ class HelpOverlay(ModalScreen):
                     yield Label("Ctrl+Shift+Z", classes="help_key")
                     yield Label("Redo operation", classes="help_desc")
 
+                # Operations Sidebar section
+                yield Label("Operations Sidebar", classes="help_section_title")
+                with Grid(classes="help_section"):
+                    yield Label("Ctrl+Up/Down", classes="help_key")
+                    yield Label("Reorder operations", classes="help_desc")
+                    yield Label("Enter", classes="help_key")
+                    yield Label("Edit operation", classes="help_desc")
+                    yield Label("Delete", classes="help_key")
+                    yield Label("Remove operation", classes="help_desc")
+                    yield Label("Ctrl+Shift+X", classes="help_key")
+                    yield Label("Clear all operations", classes="help_desc")
+
                 # Session Management section
                 yield Label("Session Management", classes="help_section_title")
                 with Grid(classes="help_section"):
@@ -120,7 +134,7 @@ class HelpOverlay(ModalScreen):
                     yield Label("Save analysis", classes="help_desc")
                     yield Label("Ctrl+W", classes="help_key")
                     yield Label("Close dataset", classes="help_desc")
-                    yield Label("Ctrl+C", classes="help_key")
+                    yield Label("Q", classes="help_key")
                     yield Label("Quit application", classes="help_desc")
 
                 # General section
@@ -128,8 +142,6 @@ class HelpOverlay(ModalScreen):
                 with Grid(classes="help_section"):
                     yield Label("?", classes="help_key")
                     yield Label("Toggle this help", classes="help_desc")
-                    yield Label("Q", classes="help_key")
-                    yield Label("Quit screen", classes="help_desc")
                     yield Label("Escape", classes="help_key")
                     yield Label("Close dialog/cancel", classes="help_desc")
 

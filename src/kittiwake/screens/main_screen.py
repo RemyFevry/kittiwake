@@ -31,7 +31,7 @@ class MainScreen(Screen):
         Binding("ctrl+s", "save_analysis", "Save"),
         Binding("ctrl+p", "toggle_split_pane", "Split Pane"),
         Binding("ctrl+f", "filter_data", "Filter"),
-        Binding("ctrl+slash", "search_data", "Search"),
+        Binding("ctrl+h", "search_data", "Search"),  # Changed from ctrl+slash for French AZERTY Mac compatibility
         Binding("tab", "next_dataset", "Next Dataset"),
         Binding("shift+tab", "prev_dataset", "Prev Dataset"),
         Binding("page_down", "next_page", "Next Page", show=False),
@@ -245,7 +245,7 @@ class MainScreen(Screen):
             self.filter_sidebar.show()
 
     def action_search_data(self) -> None:
-        """Open SearchSidebar for full-text search (Ctrl+/)."""
+        """Open SearchSidebar for full-text search (Ctrl+H)."""
         # Get active dataset
         active_dataset = self.session.get_active_dataset()
         if not active_dataset:
