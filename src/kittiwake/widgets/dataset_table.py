@@ -239,8 +239,8 @@ class DatasetTable(Container):
         Args:
             event: HeaderSelected event with column information
         """
-        # Get column information
-        column_key = str(event.column_key)
+        # Get column information - ColumnKey has a .value attribute
+        column_key = event.column_key.value if hasattr(event.column_key, 'value') else str(event.column_key)
         
         # Get dtype from dataset schema
         if not self.dataset:
