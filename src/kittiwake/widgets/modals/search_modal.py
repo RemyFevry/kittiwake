@@ -112,13 +112,13 @@ class SearchModal(ModalScreen):
 
         Example:
             >>> modal._build_search_operation({"query": "male"}, ["name", "city"])
-            ('df.filter(nw.col("name").str.contains("male", case_sensitive=False) | '
-             'nw.col("city").str.contains("male", case_sensitive=False))',
+            ('df.filter(nw.col("name").str.to_lowercase().str.contains("male") | '
+             'nw.col("city").str.to_lowercase().str.contains("male"))',
              "Search: 'male'",
              {"query": "male"})
 
             >>> modal._build_search_operation({"query": "25"}, ["name", "age"], {"name": "Utf8", "age": "Int64"})
-            ('df.filter(nw.col("name").str.contains("25", case_sensitive=False) | '
+            ('df.filter(nw.col("name").str.to_lowercase().str.contains("25") | '
              'nw.col("age") == 25)',
              "Search: '25'",
              {"query": "25"})
@@ -151,6 +151,9 @@ class SearchModal(ModalScreen):
             pass
 
         conditions = []
+        
+        # Convert query to lowercase for case-insensitive search
+        query_lower = query.lower()
 
         # Build search conditions based on column types
         if schema:
@@ -158,12 +161,12 @@ class SearchModal(ModalScreen):
             for col in columns:
                 dtype = schema.get(col, "").lower()
 
-                # String/text columns: use str.contains
+                # String/text columns: use str.contains with lowercase conversion
                 if any(keyword in dtype for keyword in ["string", "object", "utf"]) or (
                     "str" in dtype and "struct" not in dtype
                 ):
                     conditions.append(
-                        f'nw.col("{col}").str.contains("{query}", case_sensitive=False)'
+                        f'nw.col("{col}").str.to_lowercase().str.contains("{query_lower}")'
                     )
                 # Numeric columns: if query is numeric, search for exact match
                 elif is_numeric and any(
@@ -174,7 +177,7 @@ class SearchModal(ModalScreen):
         else:
             # No schema - search all columns as strings (backward compatible)
             conditions = [
-                f'nw.col("{col}").str.contains("{query}", case_sensitive=False)'
+                f'nw.col("{col}").str.to_lowercase().str.contains("{query_lower}")'
                 for col in columns
             ]
 
