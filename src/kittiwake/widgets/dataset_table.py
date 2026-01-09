@@ -3,6 +3,7 @@
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.containers import Container
+from textual.message import Message
 from textual.reactive import reactive
 from textual.widgets import DataTable, Label
 
@@ -228,3 +229,46 @@ class DatasetTable(Container):
         if self.current_page != self.total_pages - 1:
             self.current_page = self.total_pages - 1
             self._load_page()
+
+    async def on_data_table_header_selected(
+        self, event: DataTable.HeaderSelected
+    ) -> None:
+        """Handle column header click to open quick filter modal.
+        
+        Args:
+            event: HeaderSelected event with column information
+        """
+        from .modals import ColumnHeaderQuickFilter
+        
+        # Get column information
+        column_key = str(event.column_key)
+        
+        # Get dtype from dataset schema
+        if not self.dataset:
+            return
+            
+        dtype = self.dataset.schema.get(column_key, "Unknown")
+        
+        # Open quick filter modal with pre-populated column
+        result = await self.app.push_screen_wait(
+            ColumnHeaderQuickFilter(column_key, dtype)
+        )
+        
+        # If user submitted a filter (not cancelled)
+        if result:
+            # Post message to parent (main screen) to handle filter creation
+            # The message will contain the operation dict
+            self.post_message(self.QuickFilterRequested(result))
+    
+    class QuickFilterRequested(Message):
+        """Message posted when user requests a quick filter from column header."""
+        
+        def __init__(self, filter_data: dict) -> None:
+            """Initialize message with filter data.
+            
+            Args:
+                filter_data: Dict with column, operator, value, type_category
+            """
+            super().__init__()
+            self.filter_data = filter_data
+

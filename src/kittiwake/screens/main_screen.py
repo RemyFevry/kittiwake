@@ -672,3 +672,53 @@ class MainScreen(Screen):
 
         self.notify("All operations cleared")
 
+    def on_dataset_table_quick_filter_requested(
+        self, message: DatasetTable.QuickFilterRequested
+    ) -> None:
+        """Handle quick filter request from column header click.
+        
+        Args:
+            message: QuickFilterRequested message with filter data
+        """
+        from ..models.operation import Operation
+        from ..widgets.modals.filter_modal import FilterModal
+        
+        active_dataset = self.session.get_active_dataset()
+        if not active_dataset:
+            return
+        
+        filter_data = message.filter_data
+        
+        # Build operation using FilterModal helper
+        # (This could be moved to a service class in the future)
+        columns = list(active_dataset.schema.keys())
+        modal = FilterModal(columns=columns)
+        
+        try:
+            code, display, params_dict = modal._build_filter_operation(filter_data)
+            
+            # Create Operation entity
+            operation = Operation(
+                code=code,
+                display=display,
+                operation_type="filter",
+                params=params_dict,
+            )
+            
+            # Add operation to dataset
+            active_dataset.apply_operation(operation)
+            self.notify(f"Applied: {display}")
+            
+            # Refresh the table to show filtered data
+            if self.dataset_table_left and self.dataset_table_left.dataset == active_dataset:
+                self.dataset_table_left.load_dataset(active_dataset)
+            if self.split_pane_active and self.dataset_table_right and self.dataset_table_right.dataset == active_dataset:
+                self.dataset_table_right.load_dataset(active_dataset)
+            
+            # Refresh operations sidebar with all operations (executed + queued)
+            if self.operations_sidebar:
+                self.operations_sidebar.refresh_operations(self._get_all_operations(active_dataset))
+                
+        except Exception as e:
+            self.kittiwake_app.notify_error(f"Quick filter failed: {e}")
+

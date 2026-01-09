@@ -75,15 +75,15 @@ Single project structure:
 
 ### Implementation for User Story 2
 
-- [ ] T015 [P] [US2] Create ColumnHeaderQuickFilter modal widget in src/kittiwake/widgets/modals/column_header_quick_filter.py
-- [ ] T016 [P] [US2] Create get_operators_for_type() helper function in src/kittiwake/utils/type_colors.py
-- [ ] T017 [US2] Add on_column_selected() message handler to DatasetTable in src/kittiwake/widgets/dataset_table.py
+- [X] T015 [P] [US2] Create ColumnHeaderQuickFilter modal widget in src/kittiwake/widgets/modals/column_header_quick_filter.py
+- [X] T016 [P] [US2] Create get_operators_for_type() helper function in src/kittiwake/utils/type_colors.py
+- [X] T017 [US2] Add on_column_selected() message handler to DatasetTable in src/kittiwake/widgets/dataset_table.py
 - [ ] T018 [US2] Implement keyboard handler for Enter key on focused column headers to trigger quick filter in src/kittiwake/widgets/dataset_table.py
-- [ ] T019 [US2] Implement ColumnHeaderQuickFilter.compose() with pre-populated column and type-filtered operators in src/kittiwake/widgets/modals/column_header_quick_filter.py
-- [ ] T020 [US2] Implement ColumnHeaderQuickFilter operation creation logic (code, display, params) in src/kittiwake/widgets/modals/column_header_quick_filter.py
-- [ ] T021 [US2] Implement ColumnHeaderQuickFilter submit handler to create Operation and invoke callback in src/kittiwake/widgets/modals/column_header_quick_filter.py
-- [ ] T022 [US2] Implement ColumnHeaderQuickFilter cancel/escape handler in src/kittiwake/widgets/modals/column_header_quick_filter.py
-- [ ] T023 [US2] Add validation for filter value input based on type category (FR-021) in src/kittiwake/widgets/modals/column_header_quick_filter.py
+- [X] T019 [US2] Implement ColumnHeaderQuickFilter.compose() with pre-populated column and type-filtered operators in src/kittiwake/widgets/modals/column_header_quick_filter.py
+- [X] T020 [US2] Implement ColumnHeaderQuickFilter operation creation logic (code, display, params) in src/kittiwake/widgets/modals/column_header_quick_filter.py
+- [X] T021 [US2] Implement ColumnHeaderQuickFilter submit handler to create Operation and invoke callback in src/kittiwake/widgets/modals/column_header_quick_filter.py
+- [X] T022 [US2] Implement ColumnHeaderQuickFilter cancel/escape handler in src/kittiwake/widgets/modals/column_header_quick_filter.py
+- [X] T023 [US2] Add validation for filter value input based on type category (FR-021) in src/kittiwake/widgets/modals/column_header_quick_filter.py
 - [ ] T024 [US2] Verify quick filter operations integrate with lazy/eager execution modes
 - [ ] T025 [US2] Verify quick filter operations appear in OperationsSidebar with correct state indicators
 
