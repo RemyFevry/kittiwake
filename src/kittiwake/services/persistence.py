@@ -53,9 +53,8 @@ class SavedAnalysisRepository:
         conn.close()
 
     def _get_connection(self):
-        """Get database connection with WAL mode."""
+        """Get database connection."""
         conn = duckdb.connect(str(self.db_path))
-        conn.execute("PRAGMA journal_mode=WAL")
         return conn
 
     def save(self, analysis_data: dict[str, Any]) -> int:
