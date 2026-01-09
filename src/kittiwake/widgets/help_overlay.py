@@ -87,6 +87,20 @@ class HelpOverlay(ModalScreen):
                     yield Label("W", classes="help_key")
                     yield Label("Add/transform columns", classes="help_desc")
 
+                # Column Type Legend section
+                yield Label("Column Type Legend", classes="help_section_title")
+                with Grid(classes="help_section"):
+                    yield Label("# Blue", classes="help_key")
+                    yield Label("Numeric (Int, Float, Decimal)", classes="help_desc")
+                    yield Label('" Green', classes="help_key")
+                    yield Label("Text (String, Categorical)", classes="help_desc")
+                    yield Label("@ Orange", classes="help_key")
+                    yield Label("Date/Time (Date, Datetime)", classes="help_desc")
+                    yield Label("? Purple", classes="help_key")
+                    yield Label("Boolean (True/False)", classes="help_desc")
+                    yield Label("· Gray", classes="help_key")
+                    yield Label("Unknown/Mixed types", classes="help_desc")
+
                 # Null Handling section
                 yield Label("Null Handling", classes="help_section_title")
                 with Grid(classes="help_section"):

@@ -24,8 +24,8 @@ Python >=3.13 (as specified in constitution and pyproject.toml): Follow standard
 
 ## Recent Changes
 - 002-column-type-display: Added Python >=3.13 (as specified in constitution and pyproject.toml)
-- 001-tui-data-explorer: Added Python >=3.13 (as specified in constitution and pyproject.toml)
-- 001-tui-data-explorer: Added Python >=3.13 (as specified in constitution and pyproject.toml)
+- 002-column-type-display: Added Python >=3.13 (as specified in constitution and pyproject.toml)
+- 002-column-type-display: Added Python >=3.13 (as specified in constitution and pyproject.toml)
 
 
 <!-- MANUAL ADDITIONS START -->

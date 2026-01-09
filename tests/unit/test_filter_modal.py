@@ -146,6 +146,78 @@ class TestFilterModalBuildOperation:
         assert code == 'df = df.filter(nw.col("name").str.to_lowercase().str.contains("são paulo"))'
         assert display == "Filter: name contains São Paulo"
         assert params == filter_dict
+    
+    def test_not_contains_operator(self, filter_modal):
+        """Test not contains operator (case-insensitive)."""
+        filter_dict = {"column": "name", "operator": "not contains", "value": "test"}
+        code, display, params = filter_modal._build_filter_operation(filter_dict)
+
+        assert code == 'df = df.filter(~nw.col("name").str.to_lowercase().str.contains("test"))'
+        assert display == "Filter: name not contains test"
+        assert params == filter_dict
+    
+    def test_starts_with_operator(self, filter_modal):
+        """Test starts with operator (case-insensitive)."""
+        filter_dict = {"column": "name", "operator": "starts with", "value": "Mr"}
+        code, display, params = filter_modal._build_filter_operation(filter_dict)
+
+        assert code == 'df = df.filter(nw.col("name").str.to_lowercase().str.starts_with("mr"))'
+        assert display == "Filter: name starts with Mr"
+        assert params == filter_dict
+    
+    def test_ends_with_operator(self, filter_modal):
+        """Test ends with operator (case-insensitive)."""
+        filter_dict = {"column": "name", "operator": "ends with", "value": "son"}
+        code, display, params = filter_modal._build_filter_operation(filter_dict)
+
+        assert code == 'df = df.filter(nw.col("name").str.to_lowercase().str.ends_with("son"))'
+        assert display == "Filter: name ends with son"
+        assert params == filter_dict
+    
+    def test_is_true_operator(self, filter_modal):
+        """Test is true operator for boolean columns."""
+        filter_dict = {"column": "active", "operator": "is true"}
+        code, display, params = filter_modal._build_filter_operation(filter_dict)
+
+        assert code == 'df = df.filter(nw.col("active") == True)'
+        assert display == "Filter: active is true"
+        assert params == filter_dict
+    
+    def test_is_false_operator(self, filter_modal):
+        """Test is false operator for boolean columns."""
+        filter_dict = {"column": "active", "operator": "is false"}
+        code, display, params = filter_modal._build_filter_operation(filter_dict)
+
+        assert code == 'df = df.filter(nw.col("active") == False)'
+        assert display == "Filter: active is false"
+        assert params == filter_dict
+    
+    def test_is_null_operator(self, filter_modal):
+        """Test is null operator."""
+        filter_dict = {"column": "email", "operator": "is null"}
+        code, display, params = filter_modal._build_filter_operation(filter_dict)
+
+        assert code == 'df = df.filter(nw.col("email").is_null())'
+        assert display == "Filter: email is null"
+        assert params == filter_dict
+    
+    def test_is_not_null_operator(self, filter_modal):
+        """Test is not null operator."""
+        filter_dict = {"column": "email", "operator": "is not null"}
+        code, display, params = filter_modal._build_filter_operation(filter_dict)
+
+        assert code == 'df = df.filter(~nw.col("email").is_null())'
+        assert display == "Filter: email is not null"
+        assert params == filter_dict
+    
+    def test_operator_without_value(self, filter_modal):
+        """Test operators that don't require a value (is null, is true, etc.)."""
+        # is null doesn't need value field
+        filter_dict = {"column": "email", "operator": "is null"}
+        code, display, params = filter_modal._build_filter_operation(filter_dict)
+
+        assert "is_null()" in code
+        assert params == filter_dict
 
 
 class TestFilterModalOperators:

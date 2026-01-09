@@ -1,11 +1,16 @@
 """Dataset table widget with pagination support."""
 
+from rich.text import Text
+from textual import work
 from textual.app import ComposeResult
 from textual.containers import Container
+from textual.message import Message
 from textual.reactive import reactive
 from textual.widgets import DataTable, Label
 
 from ..models.dataset import Dataset
+from ..services.type_detector import detect_column_type_category
+from ..utils.type_colors import get_type_color, get_type_icon
 
 
 class DatasetTable(Container):
@@ -109,7 +114,7 @@ class DatasetTable(Container):
             schema = self.dataset.schema
             for col_name in page_data.columns:
                 col_type = schema.get(col_name, "Unknown")
-                header = f"{col_name}\n({col_type})"
+                header = self._create_column_header(col_name, col_type)
                 self.data_table.add_column(header, key=col_name)
         except Exception:
             # Fallback: just use column names
@@ -139,6 +144,31 @@ class DatasetTable(Container):
             return
 
         self._update_status()
+
+    def _create_column_header(self, col_name: str, dtype: str) -> Text:
+        """Create styled header with type indicator.
+        
+        Args:
+            col_name: Column name
+            dtype: Narwhals dtype string
+            
+        Returns:
+            Rich Text object with styled header
+        """
+        # Detect type category
+        type_category = detect_column_type_category(dtype)
+        
+        # Get visual indicators
+        icon = get_type_icon(type_category)
+        color = get_type_color(type_category)
+        
+        # Build styled header
+        header = Text()
+        header.append(f"{icon} ", style=f"bold {color}")
+        header.append(col_name, style=color)
+        header.append(f"\n({dtype})", style="dim")
+        
+        return header
 
     def _update_status(self, error: str | None = None) -> None:
         """Update status label with pagination info."""
@@ -200,3 +230,56 @@ class DatasetTable(Container):
         if self.current_page != self.total_pages - 1:
             self.current_page = self.total_pages - 1
             self._load_page()
+
+    def on_data_table_header_selected(
+        self, event: DataTable.HeaderSelected
+    ) -> None:
+        """Handle column header click to open quick filter modal.
+        
+        Args:
+            event: HeaderSelected event with column information
+        """
+        # Get column information - ColumnKey has a .value attribute
+        column_key = event.column_key.value if hasattr(event.column_key, 'value') else str(event.column_key)
+        
+        # Get dtype from dataset schema
+        if not self.dataset:
+            return
+            
+        dtype = self.dataset.schema.get(column_key, "Unknown")
+        
+        # Launch worker to show modal (async operation)
+        self._show_quick_filter_modal(column_key, dtype)
+    
+    @work(exclusive=True)
+    async def _show_quick_filter_modal(self, column_key: str, dtype: str) -> None:
+        """Show quick filter modal in a worker (async context).
+        
+        Args:
+            column_key: Column name
+            dtype: Column data type
+        """
+        from .modals import ColumnHeaderQuickFilter
+        
+        # Open quick filter modal with pre-populated column
+        result = await self.app.push_screen_wait(
+            ColumnHeaderQuickFilter(column_key, dtype)
+        )
+        
+        # If user submitted a filter (not cancelled)
+        if result:
+            # Post message to parent (main screen) to handle filter creation
+            self.post_message(self.QuickFilterRequested(result))
+    
+    class QuickFilterRequested(Message):
+        """Message posted when user requests a quick filter from column header."""
+        
+        def __init__(self, filter_data: dict) -> None:
+            """Initialize message with filter data.
+            
+            Args:
+                filter_data: Dict with column, operator, value, type_category
+            """
+            super().__init__()
+            self.filter_data = filter_data
+
