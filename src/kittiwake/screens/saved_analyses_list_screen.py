@@ -10,6 +10,7 @@ from textual.screen import Screen
 from textual.widgets import DataTable, Footer, Header, Static
 
 from ..services.persistence import SavedAnalysisRepository
+from ..widgets.modals.export_modal import ExportModal
 
 if TYPE_CHECKING:
     from ..app import KittiwakeApp
@@ -253,8 +254,53 @@ class SavedAnalysesListScreen(Screen):
             self.notify("No analysis selected", severity="warning")
             return
 
-        # Return to main screen with export action
-        self.dismiss({"action": "export", "analysis": analysis})
+        # Load full analysis data with operations
+        try:
+            repo = SavedAnalysisRepository()
+            full_analysis = repo.load_by_id(analysis["id"])
+            
+            if not full_analysis:
+                self.notify("Failed to load analysis data", severity="error")
+                return
+        except Exception as e:
+            self.kittiwake_app.notify_error(f"Error loading analysis: {e}")
+            return
+
+        # Show export modal
+        def on_export_modal_result(result: dict | None) -> None:
+            """Handle export modal result."""
+            if result is None:
+                return
+            
+            export_format = result["format"]
+            output_path = result["path"]
+            
+            # Perform export
+            try:
+                from ..services.export import ExportService
+                from pathlib import Path
+                
+                export_service = ExportService()
+                
+                # Call appropriate export method
+                if export_format == "python":
+                    output_file = export_service.export_to_python(full_analysis, output_path)
+                elif export_format == "marimo":
+                    output_file = export_service.export_to_marimo(full_analysis, output_path)
+                elif export_format == "jupyter":
+                    output_file = export_service.export_to_jupyter(full_analysis, output_path)
+                else:
+                    self.notify(f"Unknown export format: {export_format}", severity="error")
+                    return
+                
+                self.notify(f"Exported to {output_file}", severity="information")
+            except Exception as e:
+                self.kittiwake_app.notify_error(f"Export failed: {e}")
+        
+        self.app.push_screen(
+            ExportModal(analysis_name=analysis["name"]),
+            on_export_modal_result
+        )
 
     def action_cancel(self) -> None:
         """Cancel and return to main screen without action."""

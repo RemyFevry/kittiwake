@@ -13,6 +13,9 @@ from ..models.dataset_session import DatasetSession
 from ..models.operations import Operation
 from ..utils.keybindings import KeybindingsRegistry
 from ..widgets import DatasetTable, DatasetTabs, HelpOverlay
+from ..widgets.modals.export_modal import ExportModal
+from ..widgets.modals.mode_switch_modal import ModeSwitchPromptModal
+from ..widgets.modals.save_analysis_modal import SaveAnalysisModal
 from ..widgets.sidebars import FilterSidebar, OperationsSidebar, SearchSidebar
 
 if TYPE_CHECKING:
@@ -34,6 +37,7 @@ class MainScreen(Screen):
         Binding("ctrl+h", "search_data", "Search"),  # Changed from ctrl+slash for French AZERTY Mac compatibility
         Binding("ctrl+e", "execute_next", "Execute Next"),
         Binding("ctrl+shift+e", "execute_all", "Execute All"),
+        Binding("ctrl+m", "toggle_execution_mode", "Toggle Mode"),
         Binding("ctrl+z", "undo", "Undo"),
         Binding("ctrl+shift+z", "redo", "Redo"),
         Binding("tab", "next_dataset", "Next Dataset"),
@@ -343,8 +347,57 @@ class MainScreen(Screen):
 
     def action_save_analysis(self) -> None:
         """Save current analysis."""
-        # TODO: Implement save analysis
-        self.notify("Save analysis not yet implemented")
+        # Get active dataset
+        active_dataset = self.session.get_active_dataset()
+        
+        if not active_dataset:
+            self.notify("No dataset loaded", severity="warning")
+            return
+        
+        # Check if there are operations to save
+        all_operations = self._get_all_operations(active_dataset)
+        if not all_operations:
+            self.notify("No operations to save", severity="warning")
+            return
+        
+        # Show save modal
+        def on_save_modal_result(result: dict | None) -> None:
+            """Handle save modal result."""
+            if result is None:
+                return
+            
+            # Prepare analysis data
+            analysis_data = {
+                "name": result["name"],
+                "description": result.get("description"),
+                "dataset_path": active_dataset.source,
+                "operation_count": len(all_operations),
+                "operations": [
+                    {
+                        "operation_type": op.operation_type,
+                        "display": op.display,
+                        "code": op.code,
+                        "params": op.params,
+                    }
+                    for op in all_operations
+                ],
+            }
+            
+            # Save to database
+            try:
+                from ..services.persistence import SavedAnalysisRepository
+                
+                repo = SavedAnalysisRepository()
+                analysis_id = repo.save(analysis_data)
+                
+                self.notify(f"Analysis '{result['name']}' saved successfully (ID: {analysis_id})", severity="information")
+            except Exception as e:
+                self.kittiwake_app.notify_error(f"Failed to save analysis: {e}")
+        
+        self.app.push_screen(
+            SaveAnalysisModal(),
+            on_save_modal_result
+        )
 
     def action_help(self) -> None:
         """Show help overlay."""
@@ -541,6 +594,71 @@ class MainScreen(Screen):
                 self.notify("Failed to redo operation", severity="error")
         except Exception as e:
             self.kittiwake_app.notify_error(f"Redo failed: {e}")
+    
+    def action_toggle_execution_mode(self) -> None:
+        """Toggle execution mode between lazy and eager (Ctrl+M)."""
+        active_dataset = self.session.get_active_dataset()
+        if not active_dataset:
+            self.notify("No active dataset", severity="warning")
+            return
+        
+        current_mode = active_dataset.execution_mode if hasattr(active_dataset, 'execution_mode') else "lazy"
+        new_mode = "eager" if current_mode == "lazy" else "lazy"
+        
+        # Check if switching from lazy to eager with queued operations
+        has_queued = hasattr(active_dataset, 'queued_operations') and len(active_dataset.queued_operations) > 0
+        
+        if current_mode == "lazy" and new_mode == "eager" and has_queued:
+            # Show modal to ask what to do with queued operations
+            queued_count = len(active_dataset.queued_operations)
+            
+            def on_mode_switch_result(choice: str | None) -> None:
+                """Handle mode switch modal result."""
+                if choice is None:
+                    # User cancelled
+                    return
+                
+                if choice == "execute":
+                    # Execute all queued operations
+                    try:
+                        count = active_dataset.execute_all_queued()
+                        self.notify(f"Executed {count} operations, switched to EAGER mode")
+                        
+                        # Refresh table
+                        if self.dataset_table_left:
+                            self.dataset_table_left.load_dataset(active_dataset)
+                    except Exception as e:
+                        self.kittiwake_app.notify_error(f"Failed to execute operations: {e}")
+                        return
+                
+                elif choice == "clear":
+                    # Clear queued operations
+                    active_dataset.clear_queued()
+                    self.notify("Cleared queued operations, switched to EAGER mode")
+                
+                # Switch mode
+                active_dataset.execution_mode = new_mode
+                
+                # Update sidebar mode indicator
+                if self.operations_sidebar:
+                    self.operations_sidebar.execution_mode = new_mode
+                    self.operations_sidebar.refresh_operations(self._get_all_operations(active_dataset))
+            
+            self.app.push_screen(
+                ModeSwitchPromptModal(queued_count=queued_count),
+                on_mode_switch_result
+            )
+        else:
+            # No queued operations or switching to lazy, just switch
+            active_dataset.execution_mode = new_mode
+            
+            # Update sidebar mode indicator
+            if self.operations_sidebar:
+                self.operations_sidebar.execution_mode = new_mode
+                self.operations_sidebar.refresh_operations(self._get_all_operations(active_dataset))
+            
+            mode_name = "EAGER" if new_mode == "eager" else "LAZY"
+            self.notify(f"Switched to {mode_name} mode")
 
 
     def load_dataset(self, dataset) -> None:
@@ -724,5 +842,10 @@ class MainScreen(Screen):
                 
         except Exception as e:
             self.kittiwake_app.notify_error(f"Quick filter failed: {e}")
-
-
+    
+    def on_operations_sidebar_mode_toggle_requested(
+        self, message: OperationsSidebar.ModeToggleRequested
+    ) -> None:
+        """Handle mode toggle request from sidebar button."""
+        # Delegate to action method
+        self.action_toggle_execution_mode()

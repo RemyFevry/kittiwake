@@ -1,11 +1,14 @@
 """Operations sidebar showing operations history (right sidebar, push)."""
 
+from typing import cast
+
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Vertical
 from textual.message import Message
 from textual.reactive import reactive
-from textual.widgets import Label, ListItem, ListView, Static
+from textual.widgets import Button, Label, ListItem, ListView, Static
+from textual.widgets._button import ButtonVariant
 
 
 class OperationsSidebar(Vertical):
@@ -30,6 +33,7 @@ class OperationsSidebar(Vertical):
     """
 
     show_sidebar = reactive(False)
+    execution_mode = reactive("lazy")
 
     BINDINGS = [
         Binding("ctrl+up", "move_up", "Move Up"),
@@ -37,11 +41,17 @@ class OperationsSidebar(Vertical):
         Binding("enter", "edit_operation", "Edit"),
         Binding("delete", "remove_operation", "Remove"),
         Binding("ctrl+shift+x", "clear_all", "Clear All"),  # Changed from ctrl+c to avoid conflict with copy on French Mac
+        Binding("ctrl+m", "toggle_mode", "Toggle Mode"),
     ]
 
-    def __init__(self, **kwargs):
-        """Initialize operations sidebar."""
+    def __init__(self, execution_mode: str = "lazy", **kwargs):
+        """Initialize operations sidebar.
+        
+        Args:
+            execution_mode: Initial execution mode ("lazy" or "eager")
+        """
         super().__init__(id="operations_sidebar", classes="sidebar hidden", **kwargs)
+        self.execution_mode = execution_mode
         self.operations: list = []
         self._refresh_counter = 0  # Counter to ensure unique IDs across refreshes
 
@@ -53,10 +63,44 @@ class OperationsSidebar(Vertical):
         else:
             self.add_class("hidden")
             self.remove_class("visible")
+    
+    def watch_execution_mode(self, mode: str) -> None:
+        """React to execution mode changes."""
+        # Update button if mounted
+        try:
+            button = self.query_one("#mode_toggle_button", Button)
+            button.label = self._get_mode_button_label()
+            button.variant = self._get_mode_button_variant()
+        except Exception:
+            # Button not mounted yet
+            pass
+    
+    def _get_mode_button_label(self) -> str:
+        """Get button label based on current mode."""
+        if self.execution_mode == "lazy":
+            return "⚡ LAZY"
+        else:
+            return "▶ EAGER"
+    
+    def _get_mode_button_variant(self) -> ButtonVariant:
+        """Get button variant (color) based on current mode."""
+        if self.execution_mode == "lazy":
+            return "warning"  # Yellow for lazy
+        else:
+            return "success"  # Green for eager
 
     def compose(self) -> ComposeResult:
         """Create operations sidebar content."""
         yield Label("Operations", classes="sidebar-title")
+        
+        # Mode toggle button
+        yield Button(
+            self._get_mode_button_label(),
+            id="mode_toggle_button",
+            variant=cast(ButtonVariant, self._get_mode_button_variant()),
+            classes="mode-toggle-button"
+        )
+        
         yield ListView(id="operations_list")
         yield Static("", id="operations_status", classes="sidebar-status")
 
@@ -202,6 +246,19 @@ class OperationsSidebar(Vertical):
         # Clear local state
         self.operations = []
         self.refresh_operations(self.operations)
+    
+    def action_toggle_mode(self) -> None:
+        """Toggle execution mode between lazy and eager."""
+        # Toggle mode
+        new_mode = "eager" if self.execution_mode == "lazy" else "lazy"
+        
+        # Post message to notify parent (MainScreen will handle mode switch logic)
+        self.post_message(self.ModeToggleRequested(new_mode))
+    
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        """Handle button press events."""
+        if event.button.id == "mode_toggle_button":
+            self.action_toggle_mode()
 
     # Custom messages for operation events
     class OperationsReordered(Message):
@@ -210,6 +267,13 @@ class OperationsSidebar(Vertical):
         def __init__(self, operations: list):
             super().__init__()
             self.operations = operations
+    
+    class ModeToggleRequested(Message):
+        """Message sent when mode toggle is requested."""
+        
+        def __init__(self, requested_mode: str):
+            super().__init__()
+            self.requested_mode = requested_mode
 
     class OperationEdit(Message):
         """Message sent when an operation should be edited."""
