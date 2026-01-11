@@ -452,6 +452,23 @@ class MainScreen(Screen):
             self.notify("No columns available in dataset", severity="warning")
             return
 
+        # Filter to only numerical columns for aggregation
+        from ..services.type_detector import detect_column_type_category
+
+        numerical_columns = [
+            col
+            for col, dtype in active_dataset.schema.items()
+            if detect_column_type_category(str(dtype)) == "numeric"
+        ]
+
+        # Check if there are any numerical columns
+        if not numerical_columns:
+            self.notify(
+                "Aggregation requires at least one numerical column",
+                severity="warning",
+            )
+            return
+
         # Setup aggregate sidebar callback
         def handle_aggregate_result(params: dict) -> None:
             """Handle aggregate sidebar result."""
@@ -515,9 +532,9 @@ class MainScreen(Screen):
             except Exception as e:
                 self.kittiwake_app.notify_error(f"Aggregate operation failed: {e}")
 
-        # Show aggregate sidebar
+        # Show aggregate sidebar with filtered numerical columns
         if self.aggregate_sidebar:
-            self.aggregate_sidebar.update_columns(columns)
+            self.aggregate_sidebar.update_columns(numerical_columns)
             self.aggregate_sidebar.callback = handle_aggregate_result
             self.aggregate_sidebar.show()
 
@@ -572,6 +589,23 @@ class MainScreen(Screen):
             self.notify("No columns available in dataset", severity="warning")
             return
 
+        # Filter to only numerical columns for pivot values
+        from ..services.type_detector import detect_column_type_category
+
+        numerical_columns = [
+            col
+            for col, dtype in active_dataset.schema.items()
+            if detect_column_type_category(str(dtype)) == "numeric"
+        ]
+
+        # Check if there are any numerical columns for values
+        if not numerical_columns:
+            self.notify(
+                "Pivot requires at least one numerical column for values",
+                severity="warning",
+            )
+            return
+
         # Setup pivot sidebar callback
         def handle_pivot_result(params: dict) -> None:
             """Handle pivot sidebar result."""
@@ -620,9 +654,9 @@ class MainScreen(Screen):
             except Exception as e:
                 self.kittiwake_app.notify_error(f"Pivot operation failed: {e}")
 
-        # Show pivot sidebar
+        # Show pivot sidebar with all columns for index/columns, numerical for values
         if self.pivot_sidebar:
-            self.pivot_sidebar.update_columns(columns)
+            self.pivot_sidebar.update_columns(columns, value_columns=numerical_columns)
             self.pivot_sidebar.callback = handle_pivot_result
             self.pivot_sidebar.show()
 
@@ -944,7 +978,9 @@ class MainScreen(Screen):
                     description=result.get("description"),
                     operations=all_operations,
                     include_schema=result.get("include_schema", True),
-                    dataset_schema=active_dataset.schema if result.get("include_schema", True) else None,
+                    dataset_schema=active_dataset.schema
+                    if result.get("include_schema", True)
+                    else None,
                 )
 
                 if error:
