@@ -3,44 +3,52 @@
 from typing import Literal
 
 # Redefine TypeCategory here to avoid circular imports
-TypeCategory = Literal["numeric", "text", "date", "boolean", "unknown"]
+TypeCategory = Literal["numeric", "text", "date", "boolean", "list", "dict", "unknown"]
 
 # Type category to Textual color variable mapping (for CSS)
 # Uses semantic Textual colors that adapt to terminal theme
 TYPE_COLORS_CSS: dict[TypeCategory, str] = {
-    "numeric": "primary",      # Blue/Cyan - numbers are foundational
-    "text": "success",         # Green - text is successful communication
-    "date": "warning",         # Orange/Yellow - dates warn of time constraints
-    "boolean": "accent",       # Purple/Magenta - booleans accent true/false logic
-    "unknown": "text-muted",   # Gray - unknown is muted/undefined
+    "numeric": "primary",  # Blue/Cyan - numbers are foundational
+    "text": "success",  # Green - text is successful communication
+    "date": "warning",  # Orange/Yellow - dates warn of time constraints
+    "boolean": "accent",  # Purple/Magenta - booleans accent true/false logic
+    "list": "primary",  # Cyan/Blue - lists are collections (similar to numeric)
+    "dict": "accent",  # Magenta/Purple - dicts are structured (similar to boolean)
+    "unknown": "text-muted",  # Gray - unknown is muted/undefined
 }
 
 # Type category to Rich color names (for Text objects)
 # These are actual color names that Rich understands
 TYPE_COLORS: dict[TypeCategory, str] = {
-    "numeric": "bright_blue",    # Blue - numbers are foundational
-    "text": "bright_green",      # Green - text is successful communication  
-    "date": "yellow",            # Yellow - dates warn of time constraints
-    "boolean": "bright_magenta", # Magenta - booleans accent true/false logic
-    "unknown": "bright_black",   # Gray - unknown is muted/undefined
+    "numeric": "bright_blue",  # Blue - numbers are foundational
+    "text": "bright_green",  # Green - text is successful communication
+    "date": "yellow",  # Yellow - dates warn of time constraints
+    "boolean": "bright_magenta",  # Magenta - booleans accent true/false logic
+    "list": "cyan",  # Cyan - lists are ordered collections
+    "dict": "magenta",  # Magenta - dicts are key-value structures
+    "unknown": "bright_black",  # Gray - unknown is muted/undefined
 }
 
 # ASCII icons for type categories (work in all terminals)
 TYPE_ICONS_ASCII: dict[TypeCategory, str] = {
-    "numeric": "#",   # Hash/number symbol
-    "text": '"',      # Quote symbol for strings
-    "date": "@",      # At symbol (point in time)
-    "boolean": "?",   # Question mark (true/false)
-    "unknown": "·",   # Middle dot (undefined)
+    "numeric": "#",  # Hash/number symbol
+    "text": '"',  # Quote symbol for strings
+    "date": "@",  # At symbol (point in time)
+    "boolean": "?",  # Question mark (true/false)
+    "list": "[",  # Opening bracket for lists
+    "dict": "{",  # Opening brace for dicts
+    "unknown": "·",  # Middle dot (undefined)
 }
 
 # Unicode emoji icons for enhanced terminals (optional fallback)
 TYPE_ICONS_UNICODE: dict[TypeCategory, str] = {
-    "numeric": "🔢",   # Input numbers emoji
-    "text": "📝",      # Memo emoji
-    "date": "📅",      # Calendar emoji
-    "boolean": "☑",    # Checked box emoji
-    "unknown": "❓",   # Question mark emoji
+    "numeric": "🔢",  # Input numbers emoji
+    "text": "📝",  # Memo emoji
+    "date": "📅",  # Calendar emoji
+    "boolean": "☑",  # Checked box emoji
+    "list": "📋",  # Clipboard/list emoji
+    "dict": "📦",  # Package/box emoji (structured data)
+    "unknown": "❓",  # Question mark emoji
 }
 
 # Operator sets by type category
@@ -75,6 +83,14 @@ TYPE_OPERATORS: dict[TypeCategory, list[str]] = {
         "is null",
         "is not null",
     ],
+    "list": [
+        "is null",
+        "is not null",
+    ],
+    "dict": [
+        "is null",
+        "is not null",
+    ],
     "unknown": [
         "is null",
         "is not null",
@@ -84,37 +100,40 @@ TYPE_OPERATORS: dict[TypeCategory, list[str]] = {
 
 def get_type_color(type_category: TypeCategory) -> str:
     """Get Rich color name for a type category (for Text objects).
-    
+
     Args:
         type_category: Type category (numeric, text, date, boolean, unknown)
-        
+
     Returns:
         Rich color name (e.g., "bright_blue", "bright_green")
+
     """
     return TYPE_COLORS.get(type_category, "bright_black")
 
 
 def get_type_color_css(type_category: TypeCategory) -> str:
     """Get Textual CSS color variable for a type category.
-    
+
     Args:
         type_category: Type category (numeric, text, date, boolean, unknown)
-        
+
     Returns:
         Textual color variable name (e.g., "primary", "success")
+
     """
     return TYPE_COLORS_CSS.get(type_category, "text-muted")
 
 
 def get_type_icon(type_category: TypeCategory, use_unicode: bool = False) -> str:
     """Get icon character for a type category.
-    
+
     Args:
         type_category: Type category (numeric, text, date, boolean, unknown)
         use_unicode: If True, use Unicode emoji; if False, use ASCII
-        
+
     Returns:
         Icon character (ASCII or Unicode)
+
     """
     icons = TYPE_ICONS_UNICODE if use_unicode else TYPE_ICONS_ASCII
     return icons.get(type_category, "·")
@@ -122,25 +141,26 @@ def get_type_icon(type_category: TypeCategory, use_unicode: bool = False) -> str
 
 def get_operators_for_type(type_category: TypeCategory) -> list[str]:
     """Get available filter operators for a type category.
-    
+
     Args:
         type_category: Type category (numeric, text, date, boolean, unknown)
-        
+
     Returns:
         List of operator strings suitable for this type
+
     """
     return TYPE_OPERATORS.get(type_category, TYPE_OPERATORS["unknown"])
 
 
 def map_operator_to_symbol(operator_display: str) -> str:
     """Map human-readable operator to Python/narwhals operator symbol.
-    
+
     Args:
         operator_display: Display operator string (e.g., "equals (=)", "contains")
-        
+
     Returns:
         Operator symbol for code generation (e.g., "==", "contains")
-        
+
     Examples:
         >>> map_operator_to_symbol("equals (=)")
         '=='
@@ -148,6 +168,7 @@ def map_operator_to_symbol(operator_display: str) -> str:
         'contains'
         >>> map_operator_to_symbol("greater than (>)")
         '>'
+
     """
     # Mapping from display names to symbols
     operator_map = {
@@ -158,7 +179,6 @@ def map_operator_to_symbol(operator_display: str) -> str:
         "less than (<)": "<",
         "greater than or equal (>=)": ">=",
         "less than or equal (<=)": "<=",
-        
         # Text operators
         "equals": "==",
         "not equals": "!=",
@@ -166,32 +186,31 @@ def map_operator_to_symbol(operator_display: str) -> str:
         "not contains": "not contains",
         "starts with": "starts with",
         "ends with": "ends with",
-        
         # Date operators (same as numeric for comparison)
         "before (<)": "<",
         "after (>)": ">",
         "on or before (<=)": "<=",
         "on or after (>=)": ">=",
-        
         # Boolean operators (special cases)
         "is true": "is true",
         "is false": "is false",
         "is null": "is null",
         "is not null": "is not null",
     }
-    
+
     return operator_map.get(operator_display, operator_display)
 
 
 def terminal_supports_unicode() -> bool:
     """Detect if terminal supports Unicode emoji rendering.
-    
+
     Returns:
         True if Unicode is likely supported, False for ASCII-only fallback
-        
+
     Note:
         This is a heuristic check. Defaults to False (ASCII) for maximum compatibility.
         Can be enhanced with environment variable checks (LANG, LC_ALL) in future.
+
     """
     # TODO: Implement proper Unicode detection via locale/environment
     # For now, default to ASCII for maximum compatibility

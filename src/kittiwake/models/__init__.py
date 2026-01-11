@@ -3,6 +3,7 @@
 from .dataset import Dataset, OperationError
 from .dataset_session import DatasetSession
 from .operations import OPERATION_TYPES, Operation
+from .workflow import Workflow
 
 __all__ = [
     "Dataset",
@@ -10,4 +11,5 @@ __all__ = [
     "Operation",
     "OperationError",
     "OPERATION_TYPES",
+    "Workflow",
 ]

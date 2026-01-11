@@ -63,10 +63,12 @@ class DatasetTabs(Container):
 
         Args:
             session: DatasetSession managing datasets
+
         """
         super().__init__(**kwargs)
         self.session = session
         self.tab_buttons: list[Button] = []
+        self._rebuilding = False
 
     def compose(self) -> ComposeResult:
         """Create child widgets."""
@@ -83,44 +85,75 @@ class DatasetTabs(Container):
 
         Args:
             session: DatasetSession to use
+
         """
         self.session = session
         self._rebuild_tabs()
 
     def _rebuild_tabs(self) -> None:
         """Rebuild tab buttons from current session."""
-        if not self.session:
+        if not self.session or self._rebuilding:
             return
 
-        # Clear existing tabs
-        container = self.query_one("#tabs_container")
+        # Prevent concurrent rebuilds
+        self._rebuilding = True
 
-        # Remove old tab buttons
-        for btn in self.tab_buttons:
-            try:
-                btn.remove()
-            except Exception:
-                pass
-        self.tab_buttons.clear()
+        try:
+            container = self.query_one("#tabs_container")
+            datasets = self.session.datasets
+            num_datasets = len(datasets)
+            num_existing = len(self.tab_buttons)
 
-        # Create new tab buttons
-        datasets = self.session.datasets
-        for i, dataset in enumerate(datasets):
-            # Truncate long names
-            name = dataset.name
-            if len(name) > 20:
-                name = name[:17] + "..."
+            # Remove excess buttons (if we have more buttons than datasets)
+            while num_existing > num_datasets:
+                try:
+                    last_btn = self.tab_buttons.pop()
+                    last_btn.remove()
+                except Exception:
+                    pass
+                num_existing -= 1
 
-            # Create button with index
-            btn = Button(
-                name,
-                id=f"tab_{i}",
-                variant="primary" if i == self.active_index else "default",
-                classes="dataset-tab",
-            )
-            # Index is stored in button id, no need for extra attribute
-            self.tab_buttons.append(btn)
-            container.mount(btn)
+            # Add new buttons (if we have fewer buttons than datasets)
+            for i in range(num_existing, num_datasets):
+                dataset = datasets[i]
+                name = dataset.name
+                if len(name) > 20:
+                    name = name[:17] + "..."
+
+                btn = Button(
+                    name,
+                    id=f"tab_{i}",
+                    variant="primary" if i == self.active_index else "default",
+                    classes="dataset-tab",
+                )
+                self.tab_buttons.append(btn)
+                container.mount(btn)
+
+            # Update labels and variants of existing buttons
+            for i in range(num_datasets):
+                dataset = datasets[i]
+                btn = self.tab_buttons[i]
+                name = dataset.name
+                if len(name) > 20:
+                    name = name[:17] + "..."
+
+                # Add operation counts to label
+                queued_count = len(dataset.queued_operations)
+                executed_count = len(dataset.executed_operations)
+                if queued_count > 0 or executed_count > 0:
+                    ops_label = f" ({queued_count}⏸/{executed_count}✓)"
+                    # Ensure total label doesn't exceed reasonable length
+                    if len(name) + len(ops_label) <= 20:
+                        name = name + ops_label
+                    elif len(ops_label) > 0:
+                        # Truncate name more to fit operation counts
+                        name = name[: 20 - len(ops_label) - 3] + "..." + ops_label
+
+                btn.label = name
+                btn.variant = "primary" if i == self.active_index else "default"
+        finally:
+            # Always release the lock
+            self._rebuilding = False
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle tab button click."""
@@ -139,6 +172,7 @@ class DatasetTabs(Container):
 
         Args:
             index: Tab index (0-based)
+
         """
         if not self.session or index < 0 or index >= len(self.session.datasets):
             return
@@ -165,6 +199,7 @@ class DatasetTabs(Container):
 
         Returns:
             True if tab changed, False if only one tab
+
         """
         if not self.session or len(self.session.datasets) <= 1:
             return False
@@ -178,6 +213,7 @@ class DatasetTabs(Container):
 
         Returns:
             True if tab changed, False if only one tab
+
         """
         if not self.session or len(self.session.datasets) <= 1:
             return False
@@ -191,6 +227,7 @@ class DatasetTabs(Container):
 
         Args:
             index: Tab index to close, or None for active tab
+
         """
         if index is None:
             index = self.active_index

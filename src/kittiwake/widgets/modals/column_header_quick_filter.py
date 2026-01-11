@@ -37,11 +37,12 @@ class ColumnHeaderQuickFilter(ModalScreen[dict | None]):
         Args:
             column_name: Name of the column to filter
             column_dtype: Narwhals dtype string for the column
+
         """
         super().__init__(**kwargs)
         self.column_name = column_name
         self.column_dtype = column_dtype
-        
+
         # Detect type and get appropriate operators
         self.type_category = detect_column_type_category(column_dtype)
         self.operators = get_operators_for_type(self.type_category)
@@ -83,9 +84,10 @@ class ColumnHeaderQuickFilter(ModalScreen[dict | None]):
 
     def _get_placeholder_for_type(self) -> str:
         """Get appropriate placeholder text based on column type.
-        
+
         Returns:
             Placeholder text for the value input field
+
         """
         placeholders = {
             "numeric": "Enter number (e.g., 42, 3.14)",

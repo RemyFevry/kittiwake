@@ -34,6 +34,7 @@ class SaveAnalysisModal(ModalScreen[dict | None]):
         Args:
             default_name: Default name to prefill (e.g., for updates)
             default_description: Default description to prefill
+
         """
         super().__init__(**kwargs)
         self.default_name = default_name
@@ -46,7 +47,9 @@ class SaveAnalysisModal(ModalScreen[dict | None]):
 
             with Vertical(id="save_analysis_form"):
                 # Name input
-                yield Label("Name (required, 1-100 chars):", classes="save_analysis_label")
+                yield Label(
+                    "Name (required, 1-100 chars):", classes="save_analysis_label"
+                )
                 yield Input(
                     placeholder="Enter analysis name",
                     id="name_input",
@@ -55,7 +58,10 @@ class SaveAnalysisModal(ModalScreen[dict | None]):
                 )
 
                 # Description textarea
-                yield Label("Description (optional, max 500 chars):", classes="save_analysis_label")
+                yield Label(
+                    "Description (optional, max 500 chars):",
+                    classes="save_analysis_label",
+                )
                 yield TextArea(
                     text=self.default_description,
                     id="description_input",
@@ -100,7 +106,9 @@ class SaveAnalysisModal(ModalScreen[dict | None]):
 
         # Check for invalid characters (no path separators)
         if "/" in name or "\\" in name:
-            self.notify("Name cannot contain path separators (/ or \\)", severity="warning")
+            self.notify(
+                "Name cannot contain path separators (/ or \\)", severity="warning"
+            )
             name_input.focus()
             return
 

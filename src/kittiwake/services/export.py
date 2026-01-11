@@ -7,6 +7,8 @@ from typing import Any
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from ..utils.security import InputValidator, SecurityError
+
 
 class ExportService:
     """Service for exporting analyses to Python/marimo/Jupyter formats."""
@@ -16,10 +18,14 @@ class ExportService:
         # Templates are in specs/001-tui-data-explorer/contracts/
         # Get project root (4 levels up from this file)
         self.project_root = Path(__file__).parent.parent.parent.parent
-        self.templates_dir = self.project_root / "specs" / "001-tui-data-explorer" / "contracts"
+        self.templates_dir = (
+            self.project_root / "specs" / "001-tui-data-explorer" / "contracts"
+        )
 
         if not self.templates_dir.exists():
-            raise FileNotFoundError(f"Templates directory not found: {self.templates_dir}")
+            raise FileNotFoundError(
+                f"Templates directory not found: {self.templates_dir}"
+            )
 
         # Setup Jinja2 environment
         self.env = Environment(
@@ -46,13 +52,20 @@ class ExportService:
 
         Returns:
             Path to written file
+
         """
+        # Validate output path for security
+        try:
+            validated_path = InputValidator.validate_file_path(output_path)
+        except SecurityError as e:
+            raise ValueError(f"Invalid output path: {e}")
+
         template = self.env.get_template("export-python.jinja2")
-        
+
         context = self._prepare_context(analysis_data)
         rendered = template.render(**context)
 
-        output = Path(output_path)
+        output = validated_path
         output.write_text(rendered, encoding="utf-8")
         return output
 
@@ -69,16 +82,23 @@ class ExportService:
 
         Returns:
             Path to written file
+
         """
+        # Validate output path for security
+        try:
+            validated_path = InputValidator.validate_file_path(output_path)
+        except SecurityError as e:
+            raise ValueError(f"Invalid output path: {e}")
+
         template = self.env.get_template("export-marimo.jinja2")
-        
+
         context = self._prepare_context(analysis_data)
         # Add backend dependencies for marimo if needed
         context["backend_dependencies"] = []
-        
+
         rendered = template.render(**context)
 
-        output = Path(output_path)
+        output = validated_path
         output.write_text(rendered, encoding="utf-8")
         return output
 
@@ -95,9 +115,16 @@ class ExportService:
 
         Returns:
             Path to written file
+
         """
+        # Validate output path for security
+        try:
+            validated_path = InputValidator.validate_file_path(output_path)
+        except SecurityError as e:
+            raise ValueError(f"Invalid output path: {e}")
+
         template = self.env.get_template("export-jupyter.jinja2")
-        
+
         context = self._prepare_context(analysis_data)
         rendered = template.render(**context)
 
@@ -107,7 +134,7 @@ class ExportService:
         except json.JSONDecodeError as e:
             raise ValueError(f"Generated invalid Jupyter notebook JSON: {e}")
 
-        output = Path(output_path)
+        output = validated_path
         output.write_text(json.dumps(notebook, indent=2), encoding="utf-8")
         return output
 
@@ -119,6 +146,7 @@ class ExportService:
 
         Returns:
             Context dict for Jinja2 template
+
         """
         # Get kittiwake version - default to "dev" if not available
         kittiwake_version = "dev"

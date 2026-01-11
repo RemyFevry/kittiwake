@@ -59,15 +59,19 @@ class ExportModal(ModalScreen[dict | None]):
         Args:
             analysis_name: Name of the analysis for default filename
             default_format: Default format to select (marimo/python/jupyter)
+
         """
         super().__init__(**kwargs)
         self.analysis_name = analysis_name
-        self.default_format = default_format if default_format in self.EXPORT_FORMATS else "marimo"
+        self.default_format = (
+            default_format if default_format in self.EXPORT_FORMATS else "marimo"
+        )
 
     @property
     def kittiwake_app(self) -> "KittiwakeApp":
         """Return the app instance with proper typing."""
         from ...app import KittiwakeApp  # noqa: F401
+
         return self.app  # type: ignore[return-value]
 
     def compose(self) -> ComposeResult:
@@ -100,7 +104,7 @@ class ExportModal(ModalScreen[dict | None]):
 
                 yield Label(
                     "Tip: Leave empty to export to current directory",
-                    classes="export_hint"
+                    classes="export_hint",
                 )
 
             # Buttons
@@ -137,7 +141,9 @@ class ExportModal(ModalScreen[dict | None]):
         extension = format_info.get("extension", ".py")
 
         # Sanitize analysis name for filename
-        safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in self.analysis_name)
+        safe_name = "".join(
+            c if c.isalnum() or c in "-_" else "_" for c in self.analysis_name
+        )
         safe_name = safe_name.lower()
 
         return f"{safe_name}{extension}"
@@ -177,8 +183,7 @@ class ExportModal(ModalScreen[dict | None]):
             parent = path_obj.parent
             if not parent.exists() and str(parent) != ".":
                 self.notify(
-                    f"Parent directory does not exist: {parent}",
-                    severity="warning"
+                    f"Parent directory does not exist: {parent}", severity="warning"
                 )
                 return
 

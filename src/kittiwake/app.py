@@ -1,5 +1,6 @@
 """Main Textual application for Kittiwake TUI data explorer."""
 
+import asyncio
 import time
 from pathlib import Path
 
@@ -78,18 +79,18 @@ class KittiwakeApp(App):
         padding: 1;
     }
 
-    #filter_sidebar, #search_sidebar {
+    #filter_sidebar, #search_sidebar, #aggregate_sidebar, #pivot_sidebar, #join_sidebar {
         layer: overlay;
         dock: left;
         width: 30%;
         display: none;
     }
 
-    #filter_sidebar.visible, #search_sidebar.visible {
+    #filter_sidebar.visible, #search_sidebar.visible, #aggregate_sidebar.visible, #pivot_sidebar.visible, #join_sidebar.visible {
         display: block;
     }
 
-    #filter_sidebar.hidden, #search_sidebar.hidden {
+    #filter_sidebar.hidden, #search_sidebar.hidden, #aggregate_sidebar.hidden, #pivot_sidebar.hidden, #join_sidebar.hidden {
         display: none;
     }
 
@@ -124,24 +125,59 @@ class KittiwakeApp(App):
         margin: 0 1;
     }
 
-    /* Right sidebar (operations history - push layout) */
+    /* Value section styling for pivot sidebar */
+    #value_sections_container {
+        height: auto;
+        min-height: 10;
+    }
+
+    .value-section-title {
+        text-align: center;
+        color: $accent;
+        text-style: bold;
+        padding: 1 0;
+        margin-top: 1;
+    }
+
+    .value-section {
+        border: solid $accent;
+        padding: 1;
+        margin: 1 0;
+        background: $panel-darken-2;
+        height: auto;
+        max-height: 30;
+        overflow-y: auto;
+    }
+
+    .value-section Label {
+        margin: 1 0;
+    }
+
+    .value-section Select {
+        margin: 0 0 1 0;
+    }
+
+    .value-section Checkbox {
+        margin: 0 0 0 1;
+    }
+
+    .value-section Button {
+        width: 100%;
+        margin-top: 1;
+    }
+
+    #add_value_button {
+        width: 100%;
+        margin: 1 0;
+    }
+
+    /* Right sidebar (operations history - push layout, always visible) */
     #operations_sidebar {
-        width: 0;
+        width: 25%;
         height: 100%;
-        transition: width 100ms;
         background: $panel-darken-1;
         border-left: solid $accent;
-        padding: 0;
-    }
-
-    #operations_sidebar.visible {
-        width: 25%;
         padding: 1;
-    }
-
-    #operations_sidebar.hidden {
-        width: 0;
-        padding: 0;
     }
 
     .sidebar-status {
@@ -149,6 +185,20 @@ class KittiwakeApp(App):
         color: $text-muted;
         padding: 1;
         text-style: italic;
+    }
+
+    .dataset-label {
+        color: $text-muted;
+        text-style: italic;
+        padding: 0 1;
+        margin-bottom: 1;
+        background: $panel-darken-2;
+        text-align: center;
+    }
+
+    .mode-toggle-button {
+        width: 100%;
+        margin: 1 0;
     }
 
     #operations_list {
@@ -222,6 +272,7 @@ class KittiwakeApp(App):
             message: The error message to display
             title: Title for the notification
             copy_to_clipboard: Whether to automatically copy to clipboard (default: True)
+
         """
         if copy_to_clipboard:
             try:
@@ -230,9 +281,13 @@ class KittiwakeApp(App):
                 display_message = f"{message}\n\n[dim italic]✓ Copied to clipboard (click to dismiss)[/dim italic]"
             except Exception:
                 # Clipboard not available (e.g., macOS Terminal)
-                display_message = f"{message}\n\n[dim italic](click to dismiss)[/dim italic]"
+                display_message = (
+                    f"{message}\n\n[dim italic](click to dismiss)[/dim italic]"
+                )
         else:
-            display_message = f"{message}\n\n[dim italic](click to dismiss)[/dim italic]"
+            display_message = (
+                f"{message}\n\n[dim italic](click to dismiss)[/dim italic]"
+            )
 
         self.notify(
             display_message, severity="error", timeout=30, title=title, markup=True
@@ -248,8 +303,31 @@ class KittiwakeApp(App):
             self.call_after_refresh(self._load_initial_datasets)
 
     def _load_initial_datasets(self) -> None:
-        """Load datasets from CLI arguments."""
-        for path in self.initial_load_paths:
+        """Load datasets from CLI arguments with limit enforcement."""
+        max_load = self.session.max_datasets
+        total_paths = len(self.initial_load_paths)
+
+        # Warn if more files than limit
+        if total_paths > max_load:
+            self.notify(
+                f"Warning: {total_paths} files provided, but maximum is {max_load}. "
+                f"Only loading first {max_load} files.",
+                severity="warning",
+                timeout=6,
+            )
+            paths_to_load = self.initial_load_paths[:max_load]
+            skipped_count = total_paths - max_load
+            skipped_files = self.initial_load_paths[max_load:]
+            # Show skipped file names
+            self.notify(
+                f"Skipped {skipped_count} files: {', '.join([Path(p).name for p in skipped_files])}",
+                severity="information",
+                timeout=5,
+            )
+        else:
+            paths_to_load = self.initial_load_paths
+
+        for path in paths_to_load:
             self.run_worker(self.load_dataset_async(path), exclusive=False)
 
     async def load_dataset_async(self, path: str) -> None:
@@ -257,25 +335,64 @@ class KittiwakeApp(App):
 
         Args:
             path: File path or URL to load
+
         """
         # Track start time for 500ms threshold
         start_time = time.time()
 
-        # Show immediate notification
-        self.notify(f"Loading {Path(path).name}...")
+        # Check if this is a large file
+        file_size, estimated_rows, is_large = self.data_loader.get_file_info(path)
+
+        loading_modal = None
+
+        # Show loading modal for large files
+        if is_large:
+            from .widgets.modals import LoadingModal
+
+            loading_modal = LoadingModal(
+                filename=Path(path).name,
+                file_size=file_size,
+                estimated_rows=estimated_rows,
+            )
+
+            # Show modal and get the future
+            self.push_screen(loading_modal)
+
+            # Give the modal a moment to render
+            await asyncio.sleep(0.05)
+        else:
+            # Show immediate notification for small files
+            self.notify(f"Loading {Path(path).name}...")
 
         try:
-            # Load dataset using DataLoader
-            dataset = await self.data_loader.load_from_source(path)
+            # Progress callback to update modal
+            def progress_callback(value: float, message: str):
+                if loading_modal and not loading_modal.cancelled:
+                    loading_modal.update_progress(value, message)
+
+            # Cancellation checker function
+            def is_cancelled() -> bool:
+                return loading_modal.cancelled if loading_modal else False
+
+            # Load dataset with progress tracking and cancellation support
+            if is_large:
+                dataset = await self.data_loader.load_from_source(
+                    path, progress_callback=progress_callback, is_cancelled=is_cancelled
+                )
+            else:
+                dataset = await self.data_loader.load_from_source(path)
 
             # Calculate elapsed time
             elapsed_time = time.time() - start_time
 
+            # Dismiss loading modal if shown
+            if loading_modal and loading_modal in self.screen_stack:
+                self.pop_screen()
+
             # Show completion notification with timing if >500ms
             if elapsed_time > 0.5:
                 self.notify(
-                    f"Loaded {Path(path).name} ({elapsed_time:.1f}s)",
-                    timeout=3
+                    f"Loaded {Path(path).name} ({elapsed_time:.1f}s)", timeout=3
                 )
             else:
                 self.notify(f"Loaded {Path(path).name}", timeout=2)
@@ -283,23 +400,38 @@ class KittiwakeApp(App):
             # Update UI in main thread
             self._on_dataset_loaded(dataset)
 
+        except asyncio.CancelledError:
+            # User cancelled the loading operation
+            if loading_modal and loading_modal in self.screen_stack:
+                self.pop_screen()
+            self.notify(
+                f"Cancelled loading {Path(path).name}", severity="warning", timeout=3
+            )
         except FileNotFoundError:
+            if loading_modal and loading_modal in self.screen_stack:
+                self.pop_screen()
             self.notify_error(
                 f"File not found: {Path(path).name}",
                 title="Load Failed",
             )
         except TimeoutError as e:
+            if loading_modal and loading_modal in self.screen_stack:
+                self.pop_screen()
             self.notify_error(
                 f"Network timeout loading {Path(path).name}: {e}",
                 title="Load Failed",
             )
         except ValueError as e:
+            if loading_modal and loading_modal in self.screen_stack:
+                self.pop_screen()
             # Handles unsupported formats and HTTP errors
             self.notify_error(
                 f"Error loading {Path(path).name}: {e}",
                 title="Load Failed",
             )
         except Exception as e:
+            if loading_modal and loading_modal in self.screen_stack:
+                self.pop_screen()
             # Catch-all for unexpected errors
             self.notify_error(
                 f"Unexpected error loading {Path(path).name}: {type(e).__name__}: {e}",
@@ -311,6 +443,7 @@ class KittiwakeApp(App):
 
         Args:
             dataset: Loaded dataset
+
         """
         try:
             self.main_screen.load_dataset(dataset)

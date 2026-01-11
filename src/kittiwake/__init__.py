@@ -5,7 +5,7 @@ from .models import DatasetSession
 
 
 def main() -> None:
-    """Main entry point."""
+    """Run the Kittiwake CLI application."""
     import sys
     from pathlib import Path
 

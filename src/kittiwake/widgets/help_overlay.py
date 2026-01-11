@@ -34,6 +34,7 @@ class HelpOverlay(ModalScreen):
         Args:
             screen_name: Name of screen to show help for
             keybindings: KeybindingsRegistry instance
+
         """
         super().__init__(**kwargs)
         self.screen_name = screen_name
@@ -112,13 +113,19 @@ class HelpOverlay(ModalScreen):
                 # View Controls section
                 yield Label("View Controls", classes="help_section_title")
                 with Grid(classes="help_section"):
+                    yield Label("Enter / V", classes="help_key")
+                    yield Label("View full cell content", classes="help_desc")
+                    yield Label("Ctrl+Y", classes="help_key")
+                    yield Label("Copy cell to clipboard", classes="help_desc")
+                    yield Label("Ctrl+Left/Right", classes="help_key")
+                    yield Label("Jump 5 columns", classes="help_desc")
                     yield Label("H", classes="help_key")
                     yield Label("Show first N rows", classes="help_desc")
                     yield Label("T", classes="help_key")
                     yield Label("Show last N rows", classes="help_desc")
                     yield Label("M", classes="help_key")
                     yield Label("Sample random rows", classes="help_desc")
-                    yield Label("Ctrl+P", classes="help_key")
+                    yield Label("Ctrl+D", classes="help_key")
                     yield Label("Toggle split pane", classes="help_desc")
 
                 # History section
@@ -133,7 +140,9 @@ class HelpOverlay(ModalScreen):
                 yield Label("Execution (Lazy Mode)", classes="help_section_title")
                 with Grid(classes="help_section"):
                     yield Label("Ctrl+M", classes="help_key")
-                    yield Label("Toggle execution mode (lazy/eager)", classes="help_desc")
+                    yield Label(
+                        "Toggle execution mode (lazy/eager)", classes="help_desc"
+                    )
                     yield Label("Ctrl+E", classes="help_key")
                     yield Label("Execute next queued operation", classes="help_desc")
                     yield Label("Ctrl+Shift+E", classes="help_key")
@@ -156,6 +165,10 @@ class HelpOverlay(ModalScreen):
                 with Grid(classes="help_section"):
                     yield Label("Ctrl+S", classes="help_key")
                     yield Label("Save analysis", classes="help_desc")
+                    yield Label("Ctrl+L", classes="help_key")
+                    yield Label("Load analysis", classes="help_desc")
+                    yield Label("Ctrl+R", classes="help_key")
+                    yield Label("Reload dataset", classes="help_desc")
                     yield Label("Ctrl+W", classes="help_key")
                     yield Label("Close dataset", classes="help_desc")
                     yield Label("Q", classes="help_key")

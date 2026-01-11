@@ -32,28 +32,36 @@ class OperationsSidebar(Vertical):
         sidebar.refresh_operations(all_operations)
     """
 
-    show_sidebar = reactive(False)
+    show_sidebar = reactive(True)  # Always visible
     execution_mode = reactive("lazy")
+    current_dataset_name: reactive[str | None] = reactive(
+        None
+    )  # Track which dataset's operations are shown
 
     BINDINGS = [
         Binding("ctrl+up", "move_up", "Move Up"),
         Binding("ctrl+down", "move_down", "Move Down"),
         Binding("enter", "edit_operation", "Edit"),
         Binding("delete", "remove_operation", "Remove"),
-        Binding("ctrl+shift+x", "clear_all", "Clear All"),  # Changed from ctrl+c to avoid conflict with copy on French Mac
+        Binding(
+            "ctrl+shift+x", "clear_all", "Clear All"
+        ),  # Changed from ctrl+c to avoid conflict with copy on French Mac
         Binding("ctrl+m", "toggle_mode", "Toggle Mode"),
     ]
 
     def __init__(self, execution_mode: str = "lazy", **kwargs):
         """Initialize operations sidebar.
-        
+
         Args:
             execution_mode: Initial execution mode ("lazy" or "eager")
+
         """
-        super().__init__(id="operations_sidebar", classes="sidebar hidden", **kwargs)
+        super().__init__(id="operations_sidebar", classes="sidebar visible", **kwargs)
         self.execution_mode = execution_mode
+        self.current_dataset_name = None
         self.operations: list = []
         self._refresh_counter = 0  # Counter to ensure unique IDs across refreshes
+        self.show_sidebar = True  # Always show sidebar
 
     def watch_show_sidebar(self, show: bool) -> None:
         """React to visibility changes."""
@@ -63,7 +71,7 @@ class OperationsSidebar(Vertical):
         else:
             self.add_class("hidden")
             self.remove_class("visible")
-    
+
     def watch_execution_mode(self, mode: str) -> None:
         """React to execution mode changes."""
         # Update button if mounted
@@ -74,14 +82,32 @@ class OperationsSidebar(Vertical):
         except Exception:
             # Button not mounted yet
             pass
-    
+
+    def watch_current_dataset_name(self, dataset_name: str | None) -> None:
+        """React to dataset name changes - update label.
+
+        Args:
+            dataset_name: Name of the dataset whose operations are displayed
+        """
+        try:
+            label = self.query_one("#dataset_name_label", Label)
+            if dataset_name:
+                label.update(f"Dataset: {dataset_name}")
+                label.display = True
+            else:
+                label.update("")
+                label.display = False
+        except Exception:
+            # Label not mounted yet
+            pass
+
     def _get_mode_button_label(self) -> str:
         """Get button label based on current mode."""
         if self.execution_mode == "lazy":
             return "⚡ LAZY"
         else:
             return "▶ EAGER"
-    
+
     def _get_mode_button_variant(self) -> ButtonVariant:
         """Get button variant (color) based on current mode."""
         if self.execution_mode == "lazy":
@@ -92,15 +118,18 @@ class OperationsSidebar(Vertical):
     def compose(self) -> ComposeResult:
         """Create operations sidebar content."""
         yield Label("Operations", classes="sidebar-title")
-        
+
+        # Dataset name label
+        yield Label("", id="dataset_name_label", classes="dataset-label")
+
         # Mode toggle button
         yield Button(
             self._get_mode_button_label(),
             id="mode_toggle_button",
             variant=cast(ButtonVariant, self._get_mode_button_variant()),
-            classes="mode-toggle-button"
+            classes="mode-toggle-button",
         )
-        
+
         yield ListView(id="operations_list")
         yield Static("", id="operations_status", classes="sidebar-status")
 
@@ -109,11 +138,12 @@ class OperationsSidebar(Vertical):
 
         Args:
             operations: List of Operation objects (both queued and executed)
+
         """
         self.operations = operations
         self._refresh_counter += 1  # Increment counter for unique IDs
         operations_list = self.query_one("#operations_list", ListView)
-        
+
         # Remove all existing items by querying and removing them
         # This is more reliable than clear() which might be async
         for child in list(operations_list.children):
@@ -122,17 +152,17 @@ class OperationsSidebar(Vertical):
         for idx, op in enumerate(operations):
             # Determine operation state styling
             state_indicator = ""
-            if hasattr(op, 'state'):
+            if hasattr(op, "state"):
                 if op.state == "queued":
                     state_indicator = "⏳ "  # Hourglass for queued
                 elif op.state == "executed":
-                    state_indicator = "✓ "   # Checkmark for executed
+                    state_indicator = "✓ "  # Checkmark for executed
                 elif op.state == "failed":
-                    state_indicator = "✗ "   # X mark for failed
-            
+                    state_indicator = "✗ "  # X mark for failed
+
             # Display format: "⏳ 1. Filter: age > 25" or "✓ 1. Filter: age > 25"
             display_text = f"{state_indicator}{idx + 1}. {op.display}"
-            
+
             # Use refresh counter + index to ensure unique IDs across multiple refreshes
             operations_list.append(
                 ListItem(
@@ -144,10 +174,18 @@ class OperationsSidebar(Vertical):
         # Update status
         status = self.query_one("#operations_status", Static)
         if operations:
-            queued_count = sum(1 for op in operations if hasattr(op, 'state') and op.state == "queued")
-            executed_count = sum(1 for op in operations if hasattr(op, 'state') and op.state == "executed")
-            failed_count = sum(1 for op in operations if hasattr(op, 'state') and op.state == "failed")
-            
+            queued_count = sum(
+                1 for op in operations if hasattr(op, "state") and op.state == "queued"
+            )
+            executed_count = sum(
+                1
+                for op in operations
+                if hasattr(op, "state") and op.state == "executed"
+            )
+            failed_count = sum(
+                1 for op in operations if hasattr(op, "state") and op.state == "failed"
+            )
+
             status_parts = []
             if executed_count > 0:
                 status_parts.append(f"{executed_count} executed")
@@ -155,13 +193,13 @@ class OperationsSidebar(Vertical):
                 status_parts.append(f"{queued_count} queued")
             if failed_count > 0:
                 status_parts.append(f"{failed_count} failed")
-            
+
             status.update(", ".join(status_parts))
         else:
             status.update("No operations")
 
-        # Auto-show/hide based on operations
-        self.show_sidebar = len(operations) > 0
+        # Always show sidebar (user requested it to be always visible)
+        self.show_sidebar = True
 
     def action_move_up(self) -> None:
         """Move selected operation up in sequence."""
@@ -190,7 +228,10 @@ class OperationsSidebar(Vertical):
         """Move selected operation down in sequence."""
         operations_list = self.query_one("#operations_list", ListView)
 
-        if operations_list.index is None or operations_list.index >= len(self.operations) - 1:
+        if (
+            operations_list.index is None
+            or operations_list.index >= len(self.operations) - 1
+        ):
             self.app.notify("Cannot move down further", severity="warning")
             return
 
@@ -246,15 +287,15 @@ class OperationsSidebar(Vertical):
         # Clear local state
         self.operations = []
         self.refresh_operations(self.operations)
-    
+
     def action_toggle_mode(self) -> None:
         """Toggle execution mode between lazy and eager."""
         # Toggle mode
         new_mode = "eager" if self.execution_mode == "lazy" else "lazy"
-        
+
         # Post message to notify parent (MainScreen will handle mode switch logic)
         self.post_message(self.ModeToggleRequested(new_mode))
-    
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button press events."""
         if event.button.id == "mode_toggle_button":
@@ -267,10 +308,10 @@ class OperationsSidebar(Vertical):
         def __init__(self, operations: list):
             super().__init__()
             self.operations = operations
-    
+
     class ModeToggleRequested(Message):
         """Message sent when mode toggle is requested."""
-        
+
         def __init__(self, requested_mode: str):
             super().__init__()
             self.requested_mode = requested_mode

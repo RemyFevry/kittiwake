@@ -9,7 +9,8 @@ from textual.containers import Container
 from textual.screen import Screen
 from textual.widgets import DataTable, Footer, Header, Static
 
-from ..services.persistence import SavedAnalysisRepository
+from ..services.persistence import DatabaseCorruptionError, SavedAnalysisRepository
+from ..widgets.modals import DatabaseCorruptionModal
 from ..widgets.modals.export_modal import ExportModal
 
 if TYPE_CHECKING:
@@ -35,11 +36,13 @@ class SavedAnalysesListScreen(Screen):
         Binding("e", "edit_analysis", "Edit"),
         Binding("delete", "delete_analysis", "Delete"),
         Binding("x", "export_analysis", "Export"),
+        Binding("r", "reinitialize_database", "Reinit DB", show=False),
         Binding("escape", "cancel", "Cancel"),
         Binding("q", "cancel", "Back"),
     ]
 
-    CSS = """
+    CSS = (
+        """
     SavedAnalysesListScreen {
         align: center middle;
     }
@@ -57,7 +60,7 @@ class SavedAnalysesListScreen(Screen):
         text-style: bold;
         background: $primary;
         color: $text;
-        margin-bottom: 1;
+        margin-bottom:1;
         padding: 1;
     }
 
@@ -72,6 +75,71 @@ class SavedAnalysesListScreen(Screen):
         color: $text-muted;
     }
     """
+        + """
+    /* Database corruption modal styling */
+    #corruption_dialog {
+        width: 80;
+        height: auto;
+        background: $surface;
+        border: thick $error;
+        padding: 1 2;
+    }
+
+    #corruption_title {
+        text-align: center;
+        text-style: bold;
+        background: $error;
+        color: $text;
+        margin-bottom: 1;
+        padding: 1;
+    }
+
+    #corruption_form {
+        height: auto;
+        padding: 1 0;
+    }
+
+    .corruption_label {
+        margin-top: 1;
+        margin-bottom: 0;
+        text-style: bold;
+        color: $text;
+    }
+
+    .error_display {
+        margin: 0 0 1 0;
+        padding: 1;
+        background: $panel-darken-1;
+        color: $error;
+        text-style: italic;
+    }
+
+    .path_display {
+        margin: 0 0 1 0;
+        padding: 1;
+        background: $panel-darken-1;
+        color: $text-muted;
+        text-style: italic;
+    }
+
+    .corruption_warning {
+        color: $warning;
+        text-style: bold;
+        margin: 1 0 0 0;
+    }
+
+    #corruption_buttons {
+        width: 100%;
+        height: auto;
+        align: center middle;
+        margin-top: 1;
+    }
+
+    #corruption_buttons Button {
+        margin: 0 1;
+    }
+    """
+    )
 
     def __init__(self, **kwargs):
         """Initialize saved analyses list screen."""
@@ -84,6 +152,7 @@ class SavedAnalysesListScreen(Screen):
     def kittiwake_app(self) -> "KittiwakeApp":
         """Return the app instance with proper typing."""
         from ..app import KittiwakeApp  # noqa: F401
+
         return self.app  # type: ignore[return-value]
 
     def compose(self) -> ComposeResult:
@@ -120,6 +189,11 @@ class SavedAnalysesListScreen(Screen):
         table.clear()
 
         try:
+            # Check database health first
+            is_healthy, error_msg = self.repository.check_database_health()
+            if not is_healthy:
+                raise DatabaseCorruptionError(f"Database is corrupted: {error_msg}")
+
             # Fetch analyses from database
             self.analyses_data = self.repository.list_all()
 
@@ -153,6 +227,9 @@ class SavedAnalysesListScreen(Screen):
                 "Press Enter to load, E to edit, X to export, Delete to remove."
             )
 
+        except DatabaseCorruptionError as e:
+            status.update("Database error. Press R to reinitialize or ESC to return.")
+            self._handle_database_corruption(str(e))
         except Exception as e:
             status.update(f"Error loading analyses: {e}")
             self.kittiwake_app.notify_error(f"Failed to load analyses: {e}")
@@ -177,7 +254,11 @@ class SavedAnalysesListScreen(Screen):
         table = self.query_one("#analyses_table", DataTable)
 
         cursor_row = table.cursor_row
-        if cursor_row is None or cursor_row < 0 or cursor_row >= len(self.analyses_data):
+        if (
+            cursor_row is None
+            or cursor_row < 0
+            or cursor_row >= len(self.analyses_data)
+        ):
             return None
 
         # Return analysis at cursor position
@@ -197,9 +278,7 @@ class SavedAnalysesListScreen(Screen):
             full_analysis = self.repository.load_by_id(analysis_id)
 
             if not full_analysis:
-                self.notify(
-                    f"Analysis {analysis_id} not found", severity="error"
-                )
+                self.notify(f"Analysis {analysis_id} not found", severity="error")
                 return
 
             # Dismiss screen with loaded analysis
@@ -235,12 +314,13 @@ class SavedAnalysesListScreen(Screen):
             deleted = self.repository.delete(analysis_id)
 
             if deleted:
-                self.notify(f"Deleted analysis: {analysis_name}", severity="information")
+                self.notify(
+                    f"Deleted analysis: {analysis_name}", severity="information"
+                )
                 self._refresh_table()
             else:
                 self.notify(
-                    f"Failed to delete analysis: {analysis_name}",
-                    severity="error"
+                    f"Failed to delete analysis: {analysis_name}", severity="error"
                 )
 
         except Exception as e:
@@ -258,9 +338,9 @@ class SavedAnalysesListScreen(Screen):
         try:
             repo = SavedAnalysisRepository()
             full_analysis = repo.load_by_id(analysis["id"])
-            
+
             if not full_analysis:
-                self.notify("Failed to load analysis data", severity="error")
+                self.notify("Save analysis first", severity="warning")
                 return
         except Exception as e:
             self.kittiwake_app.notify_error(f"Error loading analysis: {e}")
@@ -271,37 +351,106 @@ class SavedAnalysesListScreen(Screen):
             """Handle export modal result."""
             if result is None:
                 return
-            
+
             export_format = result["format"]
             output_path = result["path"]
-            
+
             # Perform export
             try:
                 from ..services.export import ExportService
-                from pathlib import Path
-                
+
                 export_service = ExportService()
-                
+
                 # Call appropriate export method
                 if export_format == "python":
-                    output_file = export_service.export_to_python(full_analysis, output_path)
+                    output_file = export_service.export_to_python(
+                        full_analysis, output_path
+                    )
                 elif export_format == "marimo":
-                    output_file = export_service.export_to_marimo(full_analysis, output_path)
+                    output_file = export_service.export_to_marimo(
+                        full_analysis, output_path
+                    )
                 elif export_format == "jupyter":
-                    output_file = export_service.export_to_jupyter(full_analysis, output_path)
+                    output_file = export_service.export_to_jupyter(
+                        full_analysis, output_path
+                    )
                 else:
-                    self.notify(f"Unknown export format: {export_format}", severity="error")
+                    self.notify(
+                        f"Unknown export format: {export_format}", severity="error"
+                    )
                     return
-                
+
                 self.notify(f"Exported to {output_file}", severity="information")
             except Exception as e:
                 self.kittiwake_app.notify_error(f"Export failed: {e}")
-        
+
         self.app.push_screen(
-            ExportModal(analysis_name=analysis["name"]),
-            on_export_modal_result
+            ExportModal(analysis_name=analysis["name"]), on_export_modal_result
         )
 
     def action_cancel(self) -> None:
         """Cancel and return to main screen without action."""
         self.dismiss(None)
+
+    def _handle_database_corruption(self, error_message: str) -> None:
+        """Handle database corruption error by showing recovery modal.
+
+        Args:
+            error_message: The error message describing the corruption
+
+        """
+
+        def on_corruption_modal_result(result: bool | None) -> None:
+            """Handle corruption modal result."""
+            if result:
+                # User confirmed to reinitialize
+                try:
+                    success = self.repository.reinitialize_database()
+                    if success:
+                        self.notify(
+                            "Database reinitialized successfully",
+                            severity="information",
+                        )
+                        self._refresh_table()
+                    else:
+                        self.notify("Failed to reinitialize database", severity="error")
+                except Exception as e:
+                    self.kittiwake_app.notify_error(
+                        f"Failed to reinitialize database: {e}"
+                    )
+
+        self.app.push_screen(
+            DatabaseCorruptionModal(
+                error_message=error_message, db_path=str(self.repository.db_path)
+            ),
+            on_corruption_modal_result,
+        )
+
+    def action_reinitialize_database(self) -> None:
+        """Reinitialize the database (R key - hidden binding)."""
+
+        def on_confirm(result: bool | None) -> None:
+            """Handle confirmation result."""
+            if result:
+                try:
+                    success = self.repository.reinitialize_database()
+                    if success:
+                        self.notify(
+                            "Database reinitialized successfully",
+                            severity="information",
+                        )
+                        self._refresh_table()
+                    else:
+                        self.notify("Failed to reinitialize database", severity="error")
+                except Exception as e:
+                    self.kittiwake_app.notify_error(
+                        f"Failed to reinitialize database: {e}"
+                    )
+
+        self.app.push_screen(
+            DatabaseCorruptionModal(
+                error_message="Manual database reinitialize requested",
+                db_path=str(self.repository.db_path),
+            ),
+            on_confirm,
+        )

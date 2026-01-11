@@ -37,7 +37,9 @@ class SearchSidebar(VerticalScroll):
         yield Label("Search Data", classes="sidebar-title")
 
         with Container(classes="form-group"):
-            yield Label("Search query (searches across all columns):", classes="form-label")
+            yield Label(
+                "Search query (searches across all columns):", classes="form-label"
+            )
             yield Input(
                 placeholder="Search text...",
                 id="search_query",

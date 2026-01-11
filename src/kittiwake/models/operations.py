@@ -6,6 +6,8 @@ from uuid import UUID, uuid4
 
 import narwhals as nw
 
+from ..utils.security import OperationSandbox
+
 
 @dataclass
 class Operation:
@@ -31,7 +33,7 @@ class Operation:
 
     def to_code(self) -> str:
         """Generate Python code for this operation.
-        
+
         Returns the code attribute directly, which is the narwhals expression
         to be executed. This is used for exporting operations to notebooks.
         """
@@ -48,14 +50,12 @@ class Operation:
         )
 
     def apply(self, df: nw.LazyFrame) -> nw.LazyFrame:
-        """Apply operation to dataframe."""
+        """Apply operation to dataframe using sandboxed execution."""
         if df is None:
             raise OperationError("Cannot apply operation to None dataframe")
 
         try:
-            namespace = {"df": df, "nw": nw}
-            exec(self.code, {"__builtins__": {}}, namespace)
-            return namespace["df"]
+            return OperationSandbox.execute_operation(self.code, df, nw)
         except Exception as e:
             raise OperationError(f"Failed to apply operation '{self.display}': {e}")
 

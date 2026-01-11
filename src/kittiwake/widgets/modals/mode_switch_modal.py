@@ -19,6 +19,7 @@ class ModeSwitchPromptModal(ModalScreen[str | None]):
         "execute" - Execute all queued operations then switch
         "clear" - Clear all queued operations then switch
         None - Cancel mode switch
+
     """
 
     BINDINGS = [
@@ -82,6 +83,7 @@ class ModeSwitchPromptModal(ModalScreen[str | None]):
 
         Args:
             queued_count: Number of queued operations
+
         """
         super().__init__(**kwargs)
         self.queued_count = queued_count
@@ -95,7 +97,7 @@ class ModeSwitchPromptModal(ModalScreen[str | None]):
                 yield Label(
                     f"You have {self.queued_count} queued operation(s).\n"
                     "What would you like to do?",
-                    id="mode_switch_message"
+                    id="mode_switch_message",
                 )
 
                 with Vertical(id="mode_switch_buttons"):
@@ -103,24 +105,24 @@ class ModeSwitchPromptModal(ModalScreen[str | None]):
                         "1. Execute All & Switch",
                         id="execute_button",
                         variant="success",
-                        classes="mode-switch-button"
+                        classes="mode-switch-button",
                     )
                     yield Button(
                         "2. Clear All & Switch",
                         id="clear_button",
                         variant="warning",
-                        classes="mode-switch-button"
+                        classes="mode-switch-button",
                     )
                     yield Button(
                         "3. Cancel",
                         id="cancel_button",
                         variant="default",
-                        classes="mode-switch-button"
+                        classes="mode-switch-button",
                     )
 
                 yield Static(
                     "Shortcuts: 1/E = Execute, 2/C = Clear, 3/Esc = Cancel",
-                    id="mode_switch_hint"
+                    id="mode_switch_hint",
                 )
 
     def on_button_pressed(self, event: Button.Pressed) -> None:

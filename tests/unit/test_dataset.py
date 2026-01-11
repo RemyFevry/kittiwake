@@ -15,7 +15,7 @@ class TestDatasetBasics:
     def test_dataset_creation(self):
         """Test basic dataset creation."""
         ds = Dataset(name="Test Dataset", source="/path/to/data.csv")
-        
+
         assert ds.name == "Test Dataset"
         assert ds.source == "/path/to/data.csv"
         assert isinstance(ds.id, UUID)
@@ -28,15 +28,11 @@ class TestDatasetBasics:
         """Test dataset with loaded dataframe."""
         pdf = pd.DataFrame({"name": ["Alice", "Bob"], "age": [25, 30]})
         df = nw.from_native(pdf, eager_only=True).lazy()
-        
+
         ds = Dataset(
-            name="Test",
-            source="test.csv",
-            frame=df,
-            original_frame=df,
-            row_count=2
+            name="Test", source="test.csv", frame=df, original_frame=df, row_count=2
         )
-        
+
         assert ds.frame is not None
         assert ds.original_frame is not None
         assert ds.row_count == 2
@@ -45,7 +41,7 @@ class TestDatasetBasics:
         """Test that each dataset gets a unique ID."""
         ds1 = Dataset(name="Dataset 1")
         ds2 = Dataset(name="Dataset 2")
-        
+
         assert ds1.id != ds2.id
 
 
@@ -57,7 +53,7 @@ class TestLazyMode:
         pdf = pd.DataFrame({"name": ["Alice", "Bob"], "age": [25, 30]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df)
-        
+
         assert ds.execution_mode == "lazy"
 
     def test_apply_operation_in_lazy_mode_queues(self):
@@ -65,16 +61,16 @@ class TestLazyMode:
         pdf = pd.DataFrame({"name": ["Alice", "Bob"], "age": [25, 30]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df, execution_mode="lazy")
-        
+
         op = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter: age > 25",
             operation_type="filter",
-            params={}
+            params={},
         )
-        
+
         ds.apply_operation(op)
-        
+
         assert len(ds.queued_operations) == 1
         assert ds.queued_operations[0] == op
         assert op.state == "queued"
@@ -85,23 +81,23 @@ class TestLazyMode:
         pdf = pd.DataFrame({"name": ["Alice", "Bob"], "age": [25, 30]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df)
-        
+
         op1 = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter 1",
             operation_type="filter",
-            params={}
+            params={},
         )
         op2 = Operation(
             code="df = df.select(['name'])",
             display="Select name",
             operation_type="select",
-            params={}
+            params={},
         )
-        
+
         ds.queue_operation(op1)
         ds.queue_operation(op2)
-        
+
         assert len(ds.queued_operations) == 2
         assert ds.queued_operations[0] == op1
         assert ds.queued_operations[1] == op2
@@ -113,19 +109,19 @@ class TestLazyMode:
         pdf = pd.DataFrame({"name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df)
-        
+
         op = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter: age > 25",
             operation_type="filter",
-            params={}
+            params={},
         )
-        
+
         ds.queue_operation(op)
         assert len(ds.queued_operations) == 1
-        
+
         result = ds.execute_next_queued()
-        
+
         assert result is True
         assert len(ds.queued_operations) == 0
         assert len(ds.executed_operations) == 1
@@ -138,9 +134,9 @@ class TestLazyMode:
         pdf = pd.DataFrame({"name": ["Alice"], "age": [25]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df)
-        
+
         result = ds.execute_next_queued()
-        
+
         assert result is False
 
     def test_execute_next_queued_with_error(self):
@@ -148,19 +144,19 @@ class TestLazyMode:
         pdf = pd.DataFrame({"name": ["Alice"], "age": [25]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df)
-        
+
         op = Operation(
             code="df = df.filter(nw.col('invalid_column') > 25)",
             display="Filter: invalid",
             operation_type="filter",
-            params={}
+            params={},
         )
-        
+
         ds.queue_operation(op)
-        
+
         with pytest.raises(Exception):
             ds.execute_next_queued()
-        
+
         # Operation should be marked as failed and stay in queue
         assert len(ds.queued_operations) == 1
         assert op.state == "failed"
@@ -171,32 +167,32 @@ class TestLazyMode:
         pdf = pd.DataFrame({"name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df)
-        
+
         op1 = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter 1",
             operation_type="filter",
-            params={}
+            params={},
         )
         op2 = Operation(
             code="df = df.select(['name'])",
             display="Select name",
             operation_type="select",
-            params={}
+            params={},
         )
         op3 = Operation(
             code="df = df.sort('name')",
             display="Sort by name",
             operation_type="sort",
-            params={}
+            params={},
         )
-        
+
         ds.queue_operation(op1)
         ds.queue_operation(op2)
         ds.queue_operation(op3)
-        
+
         count = ds.execute_all_queued()
-        
+
         assert count == 3
         assert len(ds.queued_operations) == 0
         assert len(ds.executed_operations) == 3
@@ -207,37 +203,37 @@ class TestLazyMode:
         pdf = pd.DataFrame({"name": ["Alice", "Bob"], "age": [25, 30]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df)
-        
+
         op1 = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter",
             operation_type="filter",
-            params={}
+            params={},
         )
         op2 = Operation(
             code="df = df.filter(nw.col('invalid') > 0)",
             display="Invalid filter",
             operation_type="filter",
-            params={}
+            params={},
         )
         op3 = Operation(
             code="df = df.select(['name'])",
             display="Select",
             operation_type="select",
-            params={}
+            params={},
         )
-        
+
         ds.queue_operation(op1)
         ds.queue_operation(op2)
         ds.queue_operation(op3)
-        
+
         count = ds.execute_all_queued()
-        
+
         # Should execute op1, fail on op2, and stop
         assert count == 1
         assert len(ds.executed_operations) == 1
         assert ds.executed_operations[0] == op1
-        
+
         # op2 should be failed and at front of queue, op3 still queued
         assert len(ds.queued_operations) == 2
         assert ds.queued_operations[0] == op2
@@ -250,25 +246,25 @@ class TestLazyMode:
         pdf = pd.DataFrame({"name": ["Alice"], "age": [25]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df)
-        
+
         op1 = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter 1",
             operation_type="filter",
-            params={}
+            params={},
         )
         op2 = Operation(
             code="df = df.select(['name'])",
             display="Select",
             operation_type="select",
-            params={}
+            params={},
         )
-        
+
         ds.queue_operation(op1)
         ds.queue_operation(op2)
-        
+
         count = ds.clear_queued()
-        
+
         assert count == 2
         assert len(ds.queued_operations) == 0
 
@@ -280,22 +276,17 @@ class TestEagerMode:
         """Test that operations execute immediately in eager mode."""
         pdf = pd.DataFrame({"name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]})
         df = nw.from_native(pdf, eager_only=True).lazy()
-        ds = Dataset(
-            name="Test",
-            frame=df,
-            original_frame=df,
-            execution_mode="eager"
-        )
-        
+        ds = Dataset(name="Test", frame=df, original_frame=df, execution_mode="eager")
+
         op = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter: age > 25",
             operation_type="filter",
-            params={}
+            params={},
         )
-        
+
         ds.apply_operation(op)
-        
+
         # Should execute immediately, not queue
         assert len(ds.queued_operations) == 0
         assert len(ds.executed_operations) == 1
@@ -307,29 +298,24 @@ class TestEagerMode:
         """Test multiple operations in eager mode."""
         pdf = pd.DataFrame({"name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]})
         df = nw.from_native(pdf, eager_only=True).lazy()
-        ds = Dataset(
-            name="Test",
-            frame=df,
-            original_frame=df,
-            execution_mode="eager"
-        )
-        
+        ds = Dataset(name="Test", frame=df, original_frame=df, execution_mode="eager")
+
         op1 = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter",
             operation_type="filter",
-            params={}
+            params={},
         )
         op2 = Operation(
             code="df = df.select(['name'])",
             display="Select",
             operation_type="select",
-            params={}
+            params={},
         )
-        
+
         ds.apply_operation(op1)
         ds.apply_operation(op2)
-        
+
         assert len(ds.executed_operations) == 2
         assert len(ds.queued_operations) == 0
         assert all(op.state == "executed" for op in ds.executed_operations)
@@ -338,20 +324,15 @@ class TestEagerMode:
         """Test operation failure in eager mode."""
         pdf = pd.DataFrame({"name": ["Alice"], "age": [25]})
         df = nw.from_native(pdf, eager_only=True).lazy()
-        ds = Dataset(
-            name="Test",
-            frame=df,
-            original_frame=df,
-            execution_mode="eager"
-        )
-        
+        ds = Dataset(name="Test", frame=df, original_frame=df, execution_mode="eager")
+
         op = Operation(
             code="df = df.filter(nw.col('invalid_column') > 25)",
             display="Invalid filter",
             operation_type="filter",
-            params={}
+            params={},
         )
-        
+
         with pytest.raises(OperationError):
             ds.apply_operation(op)
 
@@ -364,29 +345,29 @@ class TestModeSwitching:
         pdf = pd.DataFrame({"name": ["Alice", "Bob"], "age": [25, 30]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df, execution_mode="lazy")
-        
+
         # Queue operation in lazy mode
         op1 = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter",
             operation_type="filter",
-            params={}
+            params={},
         )
         ds.apply_operation(op1)
         assert len(ds.queued_operations) == 1
-        
+
         # Switch to eager mode
         ds.execution_mode = "eager"
-        
+
         # New operations should execute immediately
         op2 = Operation(
             code="df = df.select(['name'])",
             display="Select",
             operation_type="select",
-            params={}
+            params={},
         )
         ds.apply_operation(op2)
-        
+
         # op1 still queued, op2 executed
         assert len(ds.queued_operations) == 1
         assert len(ds.executed_operations) == 1
@@ -396,29 +377,29 @@ class TestModeSwitching:
         pdf = pd.DataFrame({"name": ["Alice", "Bob"], "age": [25, 30]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df, execution_mode="eager")
-        
+
         # Execute operation in eager mode
         op1 = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter",
             operation_type="filter",
-            params={}
+            params={},
         )
         ds.apply_operation(op1)
         assert len(ds.executed_operations) == 1
-        
+
         # Switch to lazy mode
         ds.execution_mode = "lazy"
-        
+
         # New operations should queue
         op2 = Operation(
             code="df = df.select(['name'])",
             display="Select",
             operation_type="select",
-            params={}
+            params={},
         )
         ds.apply_operation(op2)
-        
+
         assert len(ds.executed_operations) == 1
         assert len(ds.queued_operations) == 1
 
@@ -435,18 +416,18 @@ class TestCheckpoints:
             frame=df,
             original_frame=df,
             checkpoint_interval=2,
-            execution_mode="eager"
+            execution_mode="eager",
         )
-        
+
         for i in range(5):
             op = Operation(
                 code=f"df = df.with_columns(nw.lit({i}).alias('col{i}'))",
                 display=f"Add col{i}",
                 operation_type="with_columns",
-                params={}
+                params={},
             )
             ds.apply_operation(op)
-        
+
         # Should have checkpoints at 2 and 4
         assert 2 in ds.checkpoints
         assert 4 in ds.checkpoints
@@ -459,22 +440,17 @@ class TestBackwardsCompatibility:
         """Test operation_history is updated for backwards compatibility."""
         pdf = pd.DataFrame({"name": ["Alice", "Bob"], "age": [25, 30]})
         df = nw.from_native(pdf, eager_only=True).lazy()
-        ds = Dataset(
-            name="Test",
-            frame=df,
-            original_frame=df,
-            execution_mode="eager"
-        )
-        
+        ds = Dataset(name="Test", frame=df, original_frame=df, execution_mode="eager")
+
         op = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter",
             operation_type="filter",
-            params={}
+            params={},
         )
-        
+
         ds.apply_operation(op)
-        
+
         # Should be in both executed_operations and operation_history
         assert len(ds.executed_operations) == 1
         assert len(ds.operation_history) == 1
@@ -494,19 +470,19 @@ class TestSerialization:
             backend="pandas",
             frame=df,
             original_frame=df,
-            execution_mode="lazy"
+            execution_mode="lazy",
         )
-        
+
         op = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter",
             operation_type="filter",
-            params={}
+            params={},
         )
         ds.queue_operation(op)
-        
+
         result = ds.to_dict()
-        
+
         assert result["name"] == "Test Dataset"
         assert result["source"] == "test.csv"
         assert result["backend"] == "pandas"
@@ -522,23 +498,18 @@ class TestUndoRedo:
         """Test undoing a single operation."""
         pdf = pd.DataFrame({"name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]})
         df = nw.from_native(pdf, eager_only=True).lazy()
-        ds = Dataset(
-            name="Test",
-            frame=df,
-            original_frame=df,
-            execution_mode="eager"
-        )
-        
+        ds = Dataset(name="Test", frame=df, original_frame=df, execution_mode="eager")
+
         op = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter",
             operation_type="filter",
-            params={}
+            params={},
         )
         ds.apply_operation(op)
-        
+
         result = ds.undo()
-        
+
         assert result is True
         assert len(ds.operation_history) == 0
 
@@ -547,9 +518,9 @@ class TestUndoRedo:
         pdf = pd.DataFrame({"name": ["Alice"], "age": [25]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df)
-        
+
         result = ds.undo()
-        
+
         assert result is False
 
     def test_undo_with_checkpoint(self):
@@ -561,21 +532,21 @@ class TestUndoRedo:
             frame=df,
             original_frame=df,
             checkpoint_interval=2,
-            execution_mode="eager"
+            execution_mode="eager",
         )
-        
+
         # Create 3 operations (checkpoint at 2)
         for i in range(3):
             op = Operation(
                 code=f"df = df.with_columns(nw.lit({i}).alias('col{i}'))",
                 display=f"Add col{i}",
                 operation_type="with_columns",
-                params={}
+                params={},
             )
             ds.apply_operation(op)
-        
+
         result = ds.undo()
-        
+
         assert result is True
         assert len(ds.operation_history) == 2
 
@@ -583,26 +554,21 @@ class TestUndoRedo:
         """Test undo when current_frame becomes None."""
         pdf = pd.DataFrame({"name": ["Alice"], "age": [25]})
         df = nw.from_native(pdf, eager_only=True).lazy()
-        ds = Dataset(
-            name="Test",
-            frame=df,
-            original_frame=df,
-            execution_mode="eager"
-        )
-        
+        ds = Dataset(name="Test", frame=df, original_frame=df, execution_mode="eager")
+
         op = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter",
             operation_type="filter",
-            params={}
+            params={},
         )
         ds.apply_operation(op)
-        
+
         # Manually set current_frame to None to test edge case
         ds.current_frame = None
-        
+
         result = ds.undo()
-        
+
         # Should succeed because it restores from original_frame
         assert result is True
 
@@ -610,132 +576,117 @@ class TestUndoRedo:
         """Test redo after undoing an operation."""
         pdf = pd.DataFrame({"name": ["Alice", "Bob", "Charlie"], "age": [25, 30, 35]})
         df = nw.from_native(pdf, eager_only=True).lazy()
-        ds = Dataset(
-            name="Test",
-            frame=df,
-            original_frame=df,
-            execution_mode="eager"
-        )
-        
+        ds = Dataset(name="Test", frame=df, original_frame=df, execution_mode="eager")
+
         op = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter",
             operation_type="filter",
-            params={}
+            params={},
         )
         ds.apply_operation(op)
-        
+
         # Undo the operation
         assert ds.undo() is True
         assert len(ds.executed_operations) == 0
         assert len(ds.redo_stack) == 1
-        
+
         # Redo the operation
         result = ds.redo()
-        
+
         assert result is True
         assert len(ds.executed_operations) == 1
         assert len(ds.redo_stack) == 0
         assert ds.executed_operations[0] == op
-    
+
     def test_redo_without_undo(self):
         """Test redo when no operations have been undone."""
         pdf = pd.DataFrame({"name": ["Alice"], "age": [25]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df)
-        
+
         result = ds.redo()
-        
+
         assert result is False
         assert len(ds.redo_stack) == 0
-    
+
     def test_redo_stack_cleared_on_new_operation(self):
         """Test redo stack is cleared when new operation is applied."""
         pdf = pd.DataFrame({"name": ["Alice", "Bob"], "age": [25, 30]})
         df = nw.from_native(pdf, eager_only=True).lazy()
-        ds = Dataset(
-            name="Test",
-            frame=df,
-            original_frame=df,
-            execution_mode="eager"
-        )
-        
+        ds = Dataset(name="Test", frame=df, original_frame=df, execution_mode="eager")
+
         op1 = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter 1",
             operation_type="filter",
-            params={}
+            params={},
         )
         ds.apply_operation(op1)
-        
+
         # Undo and verify redo stack has the operation
         ds.undo()
         assert len(ds.redo_stack) == 1
-        
+
         # Apply a new operation
         op2 = Operation(
             code="df = df.filter(nw.col('age') < 30)",
             display="Filter 2",
             operation_type="filter",
-            params={}
+            params={},
         )
         ds.apply_operation(op2)
-        
+
         # Redo stack should be cleared
         assert len(ds.redo_stack) == 0
-    
+
     def test_multiple_undo_redo(self):
         """Test multiple undo and redo operations."""
         pdf = pd.DataFrame({"name": ["Alice", "Bob"], "age": [25, 30]})
         df = nw.from_native(pdf, eager_only=True).lazy()
-        ds = Dataset(
-            name="Test",
-            frame=df,
-            original_frame=df,
-            execution_mode="eager"
-        )
-        
+        ds = Dataset(name="Test", frame=df, original_frame=df, execution_mode="eager")
+
         op1 = Operation(
             code="df = df.filter(nw.col('age') > 20)",
             display="Filter 1",
             operation_type="filter",
-            params={}
+            params={},
         )
         op2 = Operation(
             code="df = df.filter(nw.col('age') < 35)",
             display="Filter 2",
             operation_type="filter",
-            params={}
+            params={},
         )
         op3 = Operation(
             code="df = df.select(['name'])",
             display="Select",
             operation_type="select",
-            params={}
+            params={},
         )
-        
+
         ds.apply_operation(op1)
         ds.apply_operation(op2)
         ds.apply_operation(op3)
-        
+
         assert len(ds.executed_operations) == 3
-        
+
         # Undo twice
         assert ds.undo() is True
         assert ds.undo() is True
         assert len(ds.executed_operations) == 1
         assert len(ds.redo_stack) == 2
-        
+
         # Redo once
         assert ds.redo() is True
         assert len(ds.executed_operations) == 2
         assert len(ds.redo_stack) == 1
-        
+
         # Redo again
         assert ds.redo() is True
         assert len(ds.executed_operations) == 3
         assert len(ds.redo_stack) == 0
-    
+
     def test_redo_stack_cleared_on_execute_queued(self):
         """Test redo stack is cleared when queued operation is executed."""
         pdf = pd.DataFrame({"name": ["Alice", "Bob"], "age": [25, 30]})
@@ -744,35 +695,35 @@ class TestUndoRedo:
             name="Test",
             frame=df,
             original_frame=df,
-            execution_mode="lazy"  # Start in lazy mode
+            execution_mode="lazy",  # Start in lazy mode
         )
-        
+
         op1 = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter 1",
             operation_type="filter",
-            params={}
+            params={},
         )
-        
+
         # Switch to eager to execute and create history
         ds.execution_mode = "eager"
         ds.apply_operation(op1)
-        
+
         # Undo and verify redo stack
         ds.undo()
         assert len(ds.redo_stack) == 1
-        
+
         # Switch back to lazy and queue + execute new operation
         ds.execution_mode = "lazy"
         op2 = Operation(
             code="df = df.filter(nw.col('age') < 30)",
             display="Filter 2",
             operation_type="filter",
-            params={}
+            params={},
         )
         ds.queue_operation(op2)
         ds.execute_next_queued()
-        
+
         # Redo stack should be cleared
         assert len(ds.redo_stack) == 0
 
@@ -789,35 +740,30 @@ class TestDataAccess:
             frame=df,
             original_frame=df,
             row_count=2,
-            execution_mode="eager"
+            execution_mode="eager",
         )
-        
+
         op = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter",
             operation_type="filter",
-            params={}
+            params={},
         )
         ds.apply_operation(op)
-        
+
         # Now returns actual filtered row count after operations are applied
         count = ds.get_filtered_row_count()
-        
+
         assert count == 1  # Only Bob (age=30) passes the filter (age > 25)
 
     def test_get_filtered_row_count_without_current_frame(self):
         """Test get_filtered_row_count without current_frame."""
         pdf = pd.DataFrame({"name": ["Alice", "Bob"], "age": [25, 30]})
         df = nw.from_native(pdf, eager_only=True).lazy()
-        ds = Dataset(
-            name="Test",
-            frame=df,
-            original_frame=df,
-            row_count=2
-        )
-        
+        ds = Dataset(name="Test", frame=df, original_frame=df, row_count=2)
+
         count = ds.get_filtered_row_count()
-        
+
         assert count == 2
 
 
@@ -827,16 +773,16 @@ class TestEdgeCases:
     def test_execute_operation_without_dataframe(self):
         """Test executing operation when no dataframe is loaded."""
         ds = Dataset(name="Test", frame=None, original_frame=None)
-        
+
         op = Operation(
             code="df = df.filter(nw.col('age') > 25)",
             display="Filter",
             operation_type="filter",
-            params={}
+            params={},
         )
-        
+
         ds.queue_operation(op)
-        
+
         with pytest.raises(OperationError, match="No dataset loaded"):
             ds.execute_next_queued()
 
@@ -845,9 +791,9 @@ class TestEdgeCases:
         pdf = pd.DataFrame({"name": ["Alice"], "age": [25]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df)
-        
+
         count = ds.execute_all_queued()
-        
+
         assert count == 0
 
     def test_clear_empty_queue(self):
@@ -855,35 +801,30 @@ class TestEdgeCases:
         pdf = pd.DataFrame({"name": ["Alice"], "age": [25]})
         df = nw.from_native(pdf, eager_only=True).lazy()
         ds = Dataset(name="Test", frame=df, original_frame=df)
-        
+
         count = ds.clear_queued()
-        
+
         assert count == 0
 
     def test_undo_with_empty_history(self):
         """Test undo with empty operation history."""
         pdf = pd.DataFrame({"name": ["Alice"], "age": [25]})
         df = nw.from_native(pdf, eager_only=True).lazy()
-        ds = Dataset(
-            name="Test",
-            frame=df,
-            original_frame=df,
-            execution_mode="eager"
-        )
-        
+        ds = Dataset(name="Test", frame=df, original_frame=df, execution_mode="eager")
+
         # Create and execute an operation
         op = Operation(
             code="df = df.filter(nw.col('age') > 20)",
             display="Filter",
             operation_type="filter",
-            params={}
+            params={},
         )
         ds.apply_operation(op)
-        
+
         # Undo once
         ds.undo()
-        
+
         # Try to undo again when history is empty
         result = ds.undo()
-        
+
         assert result is False

@@ -1,28 +1,67 @@
 # Kittiwake TUI Data Explorer
 
-A terminal-based interactive data exploration tool built with Textual and Narwhals.
+A powerful terminal-based interactive data exploration tool that brings the speed and flexibility of command-line workflows to data analysis. Built with Textual and Narwhals, Kittiwake provides a keyboard-first interface for exploring, filtering, transforming, and exporting datasets.
 
-## Features (MVP - Phase 3 Complete)
+## Overview
 
-- ✅ Load datasets from local files (CSV, Parquet, JSON, Excel)
-- ✅ Load datasets from remote URLs (HTTP/HTTPS)
-- ✅ View data in paginated tables (500-1000 rows per page)
-- ✅ Switch between multiple datasets (up to 10)
-- ✅ Keyboard-first navigation
-- ✅ Lazy loading for large datasets
-- ✅ Backend-agnostic (Polars, Pandas, PyArrow via Narwhals)
+Kittiwake is designed for data analysts and engineers who prefer terminal-based workflows. It combines the interactivity of GUI tools with the efficiency of CLI operations, supporting lazy evaluation for large datasets and backend-agnostic dataframe operations.
 
-## Installation
+**Key Highlights**:
+- 🚀 **Lazy & Eager Execution Modes**: Choose between lazy evaluation for massive datasets or eager loading for interactive analysis
+- 📊 **Multi-Dataset Workspace**: Work with up to 10 datasets simultaneously with tab-based navigation
+- 🔍 **Interactive Operations**: Filter, search, aggregate, and transform data with keyboard-driven sidebars
+- 💾 **Save & Export**: Save analysis history and export to Python, Jupyter, or Marimo notebooks
+- 🎯 **Backend Agnostic**: Automatically uses Polars, Pandas, or PyArrow through Narwhals
+
+## Features
+
+- ✅ **Data Loading**
+  - Local files (CSV, Parquet, JSON, Excel)
+  - Remote URLs (HTTP/HTTPS)
+  - Lazy loading with `scan_csv()` / `scan_parquet()` for large datasets
+  - Automatic backend detection (Polars → Pandas → PyArrow)
+
+- ✅ **Interactive Exploration**
+  - Paginated table view (500-1000 rows per page)
+  - Multi-dataset tabs (up to 10 datasets)
+  - Column type detection with color-coded headers
+  - Keyboard-first navigation
+
+- ✅ **Data Operations**
+  - Filter rows with multiple operators (=, ≠, >, <, ≥, ≤, contains)
+  - Search across all columns or specific columns
+  - Operation history with edit/remove/reorder capabilities
+  - Sidebar-based operation configuration
+
+- ✅ **Save & Export**
+  - Save analysis history to DuckDB
+  - Export operation sequences to:
+    - Python scripts (.py)
+    - Jupyter notebooks (.ipynb)
+    - Marimo notebooks (.py)
+  - Reload saved analyses
+
+## Quick Start
+
+For detailed implementation guides and architecture details, see the [Quick Start Guide](specs/001-tui-data-explorer/quickstart.md).
+
+### Installation
+
+**Prerequisites**: Python >=3.13
 
 ```bash
-# Install dependencies with uv
+# Clone the repository
+git clone https://github.com/yourusername/kittiwake.git
+cd kittiwake
+
+# Install dependencies with uv (recommended)
 uv sync
 
 # Or with pip
 pip install -e .
 ```
 
-## Usage
+### Basic Usage
 
 ```bash
 # Launch with empty workspace
@@ -39,23 +78,45 @@ uv run kw load https://example.com/data.csv
 uv run kw load local.csv https://example.com/data.json
 ```
 
-**Note**: Use the `load` subcommand to pre-load datasets: `kw load <files>`. Bare `kw` launches an empty workspace.
+**Tip**: Use `kw load <files>` to pre-load datasets. Running `kw` alone launches an empty workspace where you can load datasets interactively.
 
-## Keyboard Shortcuts
+### Lazy vs Eager Execution
 
-### Navigation
-- **Arrow Keys** - Navigate table cells
-- **Page Up/Down** - Navigate table pages
-- **Tab** - Switch to next dataset
-- **Shift+Tab** - Switch to previous dataset
+Kittiwake supports two execution modes optimized for different workflows:
 
-### Actions
-- **f** - Filter rows (coming in Phase 4)
-- **a** - Aggregate/Group by (coming in Phase 5)
-- **Ctrl+W** - Close current dataset
-- **Ctrl+S** - Save analysis (coming in Phase 6)
-- **?** - Show help overlay
-- **q** - Quit application
+**Lazy Mode** (Default for large files):
+```bash
+# Automatically uses scan_csv() for files > 100MB
+uv run kw load large_dataset.csv
+# Data is streamed on-demand, minimal memory usage
+```
+
+**Eager Mode** (Default for smaller files):
+```bash
+# Fully loads data into memory for interactive operations
+uv run kw load small_dataset.csv
+# Faster operations, full dataset in memory
+```
+
+The mode is automatically selected based on file size, but you can manually control it through the UI with `Ctrl+M` (mode switch).
+
+### Keyboard Shortcuts
+
+Press `?` or `Ctrl+?` in the application to see all keyboard shortcuts. Key bindings include:
+
+**Navigation**:
+- `Arrow Keys` - Navigate table cells
+- `Page Up/Down` - Navigate pages
+- `Tab / Shift+Tab` - Switch datasets
+
+**Operations**:
+- `Ctrl+F` - Open filter sidebar
+- `Ctrl+S` - Save analysis
+- `Ctrl+E` - Export to notebook
+- `Ctrl+?` - Show help overlay
+- `q` - Quit application
+
+For the complete list of shortcuts and detailed usage examples, see the [Quick Start Guide](specs/001-tui-data-explorer/quickstart.md).
 
 ## Architecture
 
@@ -70,30 +131,33 @@ src/kittiwake/
 
 ## Development Status
 
-### Completed (Phase 1-3)
-- ✅ Project setup and infrastructure
-- ✅ Core data models and services
-- ✅ Dataset loading (local and remote)
-- ✅ TUI with pagination and tabs
-- ✅ Multi-dataset support (up to 10)
-- ✅ Keyboard navigation
-- ✅ Error handling and user feedback
+### ✅ Completed Features
+- Project setup and infrastructure
+- Core data models and services
+- Dataset loading (local and remote)
+- TUI with pagination and dataset tabs
+- Multi-dataset workspace (up to 10 datasets)
+- Keyboard navigation and help overlay
+- Filter and search operations
+- Operations history sidebar with edit/remove/reorder
+- Save analysis to DuckDB
+- Export to Python, Jupyter, and Marimo notebooks
+- Column type detection and color-coded display
+- Lazy and eager execution mode switching
+- Error handling and user feedback
 
-### Pending (Optional MVP Tasks)
-- ⏸️ Split pane mode (T021)
-- ⏸️ Loading indicators for >500ms operations (T023)
+### 🚧 In Progress
+- Aggregation and group-by operations
+- Pivot table functionality
 
-### Next Phase (Phase 4)
-- 🔜 Filter and search functionality
-- 🔜 Column-specific filters
-- 🔜 Text search across all columns
+### 📋 Planned Features
+- Dataset joins and merges
+- Advanced column operations (rename, transform, derive)
+- Custom operation templates
+- Query history and replay
+- Performance profiling
 
-### Future Phases
-- Phase 5: Aggregation and summarization
-- Phase 6: Pivot tables
-- Phase 7: Dataset joins and merges
-- Phase 8: Column operations (select, drop, rename, transform)
-- Phase 9: Saved analyses and export (marimo, Python, Jupyter)
+For detailed implementation status, see the [feature specification](specs/001-tui-data-explorer/spec.md) and [task list](specs/001-tui-data-explorer/tasks.md).
 
 ## Technical Details
 
@@ -124,11 +188,18 @@ Kittiwake automatically detects and uses the best available backend:
 # Run all tests
 uv run pytest
 
+# Run specific test suites
+uv run pytest tests/unit/
+uv run pytest tests/integration/
+
 # Test with sample data
 uv run kw load tests/e2e/Titanic-Dataset.csv
 
 # Test empty workspace
 uv run kw
+
+# Test lazy/eager workflow
+uv run pytest tests/integration/test_lazy_eager_workflow.py
 ```
 
 ## License
@@ -137,7 +208,32 @@ uv run kw
 
 ## Contributing
 
-This project follows a specification-driven development approach. See `/specs/001-tui-data-explorer/` for detailed specifications.
+This project follows a specification-driven development approach. All features are designed and documented before implementation:
+
+1. **Feature Specifications**: See `/specs/001-tui-data-explorer/spec.md` for detailed feature requirements
+2. **Implementation Plan**: See `/specs/001-tui-data-explorer/plan.md` for architecture and design decisions
+3. **Task Tracking**: See `/specs/001-tui-data-explorer/tasks.md` for implementation progress
+4. **Quick Start Guide**: See `/specs/001-tui-data-explorer/quickstart.md` for developer onboarding
+
+Before contributing:
+- Review the [constitution](/.specify/memory/constitution.md) for project principles
+- Check the [task list](specs/001-tui-data-explorer/tasks.md) for available work
+- Run `uv run pytest` to ensure tests pass
+- Follow the existing code style (enforced by `ruff`)
+
+### Development Commands
+
+```bash
+# Code formatting and linting
+uv run ruff check .
+uv run ruff format .
+
+# Type checking
+uv run mypy src/
+
+# Run development version
+uv run python -m kittiwake.cli load data.csv
+```
 
 ## Acknowledgments
 

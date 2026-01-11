@@ -1,7 +1,6 @@
 """Centralized keyboard shortcuts registry."""
 
 
-
 class KeybindingsRegistry:
     """Registry for keyboard shortcuts across screens."""
 
@@ -35,7 +34,7 @@ class KeybindingsRegistry:
         "n+f": "fill_null",
         "n+d": "drop_nulls",
         "d+c": "drop_columns",
-        "ctrl+p": "split_pane",
+        "ctrl+d": "split_pane",
     }
 
     def get_bindings(self, screen: str = "main") -> dict[str, str]:

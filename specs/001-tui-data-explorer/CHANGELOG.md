@@ -1,273 +1,127 @@
-# Changelog - TUI Data Explorer
+# Changelog: TUI Data Explorer
 
-## 2026-01-09 - Modal to Sidebar Architecture Migration
+## 2026-01-10 - Added New User Story 1 Tasks (T036-T038)
 
 ### Context
-After implementing initial modals (FilterModal, SearchModal), user feedback indicated that the specification calls for a **sidebar-based architecture** rather than modal dialogs. The original plan (quickstart.md, research.md) clearly defines:
-- **Left sidebar** (30% width, overlay): Operation configuration forms
-- **Right sidebar** (25% width, push): Operations history with CRUD capabilities
+User requested three new features for enhanced data viewing experience in Phase 3 (User Story 1: Load and View Data).
 
-### Changes Made
+### New Tasks Added
 
-#### 1. Created Sidebar Widgets
-**New directory**: `src/kittiwake/widgets/sidebars/`
+#### T036: Cell Clipboard Copy
+**Task**: `T036 [P] [US1] Implement clipboard copy on cell selection`
+**File**: `src/kittiwake/widgets/dataset_table.py`
+**Description**: 
+- Copy cell value to system clipboard when user selects/clicks on a cell
+- Show brief toast notification "Copied to clipboard"
+- Use `pyperclip` library for cross-platform clipboard access
+- Handle edge cases: null values (copy empty string), very long values (copy full content)
 
-**FilterSidebar** (`filter_sidebar.py`):
-- Converted from FilterModal to left overlay sidebar
-- Column/operator/value form with Apply/Cancel buttons
-- Callback-based result handling
-- ESC to dismiss, returns focus to data table
-- Show/hide via `.show()` and `.action_dismiss()`
+**Priority**: P1 (MVP) - Parallelizable
+**User Story**: US1 (Load and View Data)
 
-**SearchSidebar** (`search_sidebar.py`):
-- Converted from SearchModal to left overlay sidebar
-- Single text input for search query
-- Searches across all columns
-- Enter key triggers apply
+#### T037: Type-Based Column Coloring
+**Task**: `T037 [P] [US1] Implement type-based column coloring`
+**Files**: 
+- `src/kittiwake/utils/type_colors.py` (color mapping)
+- `src/kittiwake/widgets/dataset_table.py` (apply colors)
 
-**OperationsSidebar** (`operations_sidebar.py`):
-- NEW: Right push sidebar for operations history
-- ListView showing all applied operations
-- Keyboard actions:
-  - `Ctrl+Up/Down`: Reorder operations
-  - `Enter`: Edit operation (reopens left sidebar with params)
-  - `Delete`: Remove operation
-  - `Ctrl+C`: Clear all operations
-- Custom messages: `OperationsReordered`, `OperationEdit`, `OperationRemoved`, `OperationsClearAll`
-- Auto-shows when first operation is applied
-- Auto-hides when all operations removed
+**Description**:
+- Create color mapping for data types: list → cyan/blue, dict → magenta/purple
+- Extend existing type color system to differentiate list and dict types
+- Apply colors to column headers in DatasetTable widget
+- Ensure colors work in both light and dark terminal themes
 
-#### 2. Architecture Differences
+**Priority**: P1 (MVP) - Parallelizable
+**User Story**: US1 (Load and View Data)
 
-**Modal Architecture** (replaced):
+#### T038: Column Filtering UI
+**Task**: `T038 [US1] Implement column filtering UI`
+**File**: `src/kittiwake/widgets/dataset_table.py`
+**Description**:
+- Add keybinding (e.g., Ctrl+Shift+F) to open column filter overlay/modal
+- Filter by column name (text search with regex support)
+- Filter by column type (checkboxes: String, Int, Float, List, Dict, Boolean, Date, etc.)
+- Show/hide columns based on filter criteria
+- Display count of visible vs total columns (e.g., "Showing 5 of 20 columns")
+- Add "Reset" button to show all columns again
+
+**Priority**: P1 (MVP) - NOT Parallelizable (depends on T037 for type detection)
+**User Story**: US1 (Load and View Data)
+
+### Impact on Task List
+
+**Total Tasks**: Increased from 102 → 105 tasks
+**Progress**: 60 of 105 tasks complete (57%)
+**MVP Size**: Increased from ~45 → ~48 tasks
+
+**Task Renumbering**:
+- Old T036-T102 → New T039-T105 (all Phase 4+ tasks shifted by +3)
+- Phase 1-3 tasks T001-T035 unchanged
+- New tasks T036-T038 inserted at end of Phase 3
+
+### Integration Points
+
+1. **T036 (Clipboard Copy)**:
+   - Integrates with existing cell selection in DatasetTable
+   - Uses Textual's toast notification system (already in use)
+   - New dependency: `pyperclip` library
+
+2. **T037 (Column Colors)**:
+   - Extends existing `type_colors.py` utility
+   - Integrates with column header rendering in DatasetTable
+   - Builds on existing type detection from `services/type_detector.py`
+
+3. **T038 (Column Filtering)**:
+   - New modal/overlay widget (similar to existing FilterModal pattern)
+   - Integrates with DatasetTable column visibility
+   - Uses type information from T037
+
+### Dependencies
+
 ```
-┌─────────────────────────────────┐
-│         Data Table              │
-│                                 │
-│    ┌──────────────┐            │
-│    │  FilterModal │ (centered) │
-│    │  (blocks UI) │            │
-│    └──────────────┘            │
-└─────────────────────────────────┘
-```
+T037 (Type Colors) ─┐
+                    ├──> T038 (Column Filtering)
+T025 (DatasetTable) ┘
 
-**Sidebar Architecture** (new):
-```
-┌──────────┬─────────────────┬──────────┐
-│  Filter  │   Data Table    │Operations│
-│ Sidebar  │  (adjusts size) │ Sidebar  │
-│ (30%,    │                 │ (25%,    │
-│ overlay) │                 │  push)   │
-└──────────┴─────────────────┴──────────┘
-```
-
-#### 3. Benefits of Sidebar Architecture
-
-**Improved UX**:
-- ✅ Operations history always visible (right sidebar)
-- ✅ Can see data table while configuring operations
-- ✅ No context switching (modals block entire UI)
-- ✅ Reordering operations directly visible
-- ✅ Edit operations by clicking in history
-
-**Better Workflow**:
-- ✅ Left sidebar → configure operation → right sidebar shows result
-- ✅ Right sidebar → click operation → left sidebar reopens with params for editing
-- ✅ Clear visual separation: input (left) vs output (right)
-
-**Keyboard-First**:
-- ✅ Ctrl+F → opens left sidebar for filter
-- ✅ Ctrl+/ → opens left sidebar for search
-- ✅ ESC → closes sidebar, returns to table
-- ✅ Tab → navigate within sidebar
-- ✅ Focus management: sidebar → table seamless
-
-#### 4. Implementation Details
-
-**CSS Layers**:
-```css
-Screen {
-    layers: base overlay;
-}
-
-#filter_sidebar, #search_sidebar {
-    layer: overlay;      /* Floats above data table */
-    dock: left;
-    width: 30%;
-}
-
-#operations_sidebar {
-    /* No layer needed - uses Horizontal push layout */
-    width: 0;            /* Hidden by default */
-    transition: width 100ms;
-}
-
-#operations_sidebar.visible {
-    width: 25%;          /* Pushes data table left */
-}
+T025 (DatasetTable) ──> T036 (Clipboard Copy)
 ```
 
-**Main Screen Layout**:
-```python
-def compose(self) -> ComposeResult:
-    yield Header()
-    
-    # Left sidebars (overlay layer)
-    yield FilterSidebar()
-    yield SearchSidebar()
-    
-    # Main content (push layout)
-    with Horizontal(id="main_content"):
-        yield DatasetTable()  # Adjusts when right sidebar appears
-        yield OperationsSidebar()
-    
-    yield Footer()
-```
+### Testing Considerations
 
-### Files Modified
+**T036 - Clipboard Copy**:
+- Test: Select cell, verify clipboard contains cell value
+- Test: Select null cell, verify clipboard contains empty string
+- Test: Select cell with very long value, verify full content copied
+- Test: Verify toast appears with "Copied to clipboard" message
 
-**New Files**:
-- `src/kittiwake/widgets/sidebars/__init__.py`
-- `src/kittiwake/widgets/sidebars/filter_sidebar.py`
-- `src/kittiwake/widgets/sidebars/search_sidebar.py`
-- `src/kittiwake/widgets/sidebars/operations_sidebar.py`
+**T037 - Type Colors**:
+- Test: Load dataset with list columns, verify cyan/blue headers
+- Test: Load dataset with dict columns, verify magenta/purple headers
+- Test: Verify colors work in light theme
+- Test: Verify colors work in dark theme
 
-**Files to Update** (next phase):
-- `src/kittiwake/screens/main_screen.py` - Use sidebars instead of modals
-- `src/kittiwake/app.py` - Add CSS for sidebar layouts
-- `specs/001-tui-data-explorer/tasks.md` - Update Phase 4 & 5 tasks to reference sidebars
+**T038 - Column Filtering**:
+- Test: Open filter with Ctrl+Shift+F, verify overlay appears
+- Test: Filter by name "age", verify only matching columns visible
+- Test: Filter by type "Int", verify only integer columns visible
+- Test: Verify counter shows "Showing N of M columns"
+- Test: Click Reset, verify all columns reappear
 
-**Deprecated** (will be removed):
-- `src/kittiwake/widgets/modals/filter_modal.py`
-- `src/kittiwake/widgets/modals/search_modal.py`
+### Related Documentation
 
-**Preserved** (for full-screen interactions):
-- `src/kittiwake/widgets/modals/save_analysis_modal.py` - May convert to sidebar
-- `src/kittiwake/widgets/modals/export_modal.py` - May convert to sidebar
-- `src/kittiwake/screens/saved_analyses_list_screen.py` - Full screen, not sidebar
+- **spec.md**: User Story 1 acceptance scenarios cover data viewing fundamentals
+- **plan.md**: Keyboard-first interaction principle (FR-006) supports these enhancements
+- **data-model.md**: Dataset.schema provides type information for T037/T038
 
-### Next Steps
-1. Update MainScreen to use sidebar architecture
-2. Add CSS styling for overlay and push layouts
-3. Update keyboard bindings to open sidebars (not modals)
-4. Implement operation edit workflow (right sidebar → left sidebar)
-5. Test reordering operations with Ctrl+Up/Down
-6. Decide: Convert SaveAnalysisModal/ExportModal to sidebars or keep as modals?
+### Notes
+
+- T036 and T037 are marked `[P]` for parallel implementation
+- T038 depends on T037 for type detection, so cannot be parallelized
+- All three tasks enhance User Story 1 without breaking existing functionality
+- These are "nice-to-have" enhancements for MVP, could be deferred to post-MVP if timeline is tight
 
 ---
 
-## 2026-01-08 - Operation Model Simplification
+## Previous Changes
 
-### Context
-User feedback identified that the original operation model was too complex with separate FilterOperation, AggregationOperation, and PivotTableOperation classes. Operations should be simpler - just narwhals expressions.
-
-### Changes Made
-
-#### 1. Clarification Session 2
-Completed 5-question clarification session (`clarification-session-2.md`) resolving:
-- **Storage format**: Operations stored as Python code strings (narwhals expressions)
-- **User interaction**: Modal-based forms with dropdowns/inputs (keyboard-driven)
-- **Supported operations**: 13 operation types with dedicated modals
-- **Storage schema**: Code + display + operation_type + params (for editing)
-- **Validation**: Immediate (modal submit) + runtime (operation apply), stop chain on error
-
-#### 2. Updated Specifications
-
-**spec.md**:
-- Added Session 2026-01-08 to Clarifications section with Q&A
-- Simplified Key Entities: removed Filter, Aggregation, PivotTable classes
-- Added Operation entity with code/display/operation_type/params fields
-- Updated SavedAnalysis.operations description
-
-**data-model.md**:
-- Replaced Filter, Aggregation, PivotTable entities with single Operation entity
-- Removed FilterOperation, AggregationOperation, PivotTableOperation Python classes
-- Added simplified Operation dataclass with code execution via eval()
-- Added 6 example operation instances (filter, aggregate, sort, select, drop_nulls, with_columns)
-
-**contracts/operations-schema.json**:
-- Replaced v1 schema with v2 (simplified)
-- New schema version: 2.0.0
-- Single Operation object with: code, display, operation_type, params
-- Added param schemas for all 13 operation types
-- 13 operation_type enum values
-
-**contracts/export-*.jinja2** (3 templates):
-- export-python.jinja2: Now renders `{{ operation.code }}` directly
-- export-marimo.jinja2: Renders code with df chaining (df_1, df_2, ...)
-- export-jupyter.jinja2: Renders code + display in markdown cells
-
-**plan.md**:
-- Added Phase 1.5: Modal Specifications section
-- Detailed specs for all 13 modal types with:
-  - Trigger keys
-  - Field layouts
-  - Code generation examples
-  - Validation rules
-  - Display string patterns
-- Added CodeGenerator and DisplayGenerator class architectures
-- Defined two-phase validation strategy
-
-#### 3. Supported Operation Types (13 total)
-
-**Core Operations**:
-1. filter - `f` key
-2. aggregate - `a` key
-3. pivot - `p` key
-4. join - `j` key
-
-**Selection Operations**:
-5. select - `c` key
-6. drop - `d`+`c` sequence
-7. rename - `r` key
-
-**Transform Operations**:
-8. with_columns - `w` key
-9. sort - `s` key
-
-**Data Cleaning**:
-10. unique - `u` key
-11. fill_null - `n`+`f` sequence
-12. drop_nulls - `n`+`d` sequence
-
-**Sampling**:
-13. head, tail, sample - `h`, `t`, `m` keys
-
-### Impact Assessment
-
-**Simplified**:
-- ✅ Operation storage (single entity vs 3+ specialized classes)
-- ✅ Export templates (no complex conditional logic)
-- ✅ Serialization (uniform JSON structure)
-
-**Added Complexity**:
-- ⚠️ Code generation logic (13 modal-specific generators needed)
-- ⚠️ Code validation (eval-based execution requires sandboxing)
-- ⚠️ Modal UI implementation (13 keyboard-driven forms)
-
-**Benefits**:
-- ✅ More flexible - easy to add new operation types
-- ✅ Simpler data model - one Operation class
-- ✅ Direct narwhals code in exports (more transparent)
-- ✅ Edit capability via params storage
-
-**Risks**:
-- ⚠️ Code injection if eval() not properly sandboxed (mitigated: controlled namespace)
-- ⚠️ More complex TUI modal logic (13 forms vs generic approach)
-
-### Files Modified
-- specs/001-tui-data-explorer/spec.md
-- specs/001-tui-data-explorer/data-model.md
-- specs/001-tui-data-explorer/plan.md
-- specs/001-tui-data-explorer/clarification-session-2.md (new)
-- specs/001-tui-data-explorer/contracts/operations-schema.json
-- specs/001-tui-data-explorer/contracts/export-python.jinja2
-- specs/001-tui-data-explorer/contracts/export-marimo.jinja2
-- specs/001-tui-data-explorer/contracts/export-jupyter.jinja2
-
-### Next Steps
-1. Begin Phase 2 implementation with simplified Operation model
-2. Implement 13 modal screens in Textual
-3. Build CodeGenerator and DisplayGenerator classes
-4. Implement eval-based Operation.apply() with proper sandboxing
-5. Update SavedAnalysis CRUD to use new operations schema v2
+See git history for detailed changelog of tasks T001-T035 and their completion status.

@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
-"""
-Kittiwake CLI entry point.
+"""Kittiwake CLI entry point.
 
 Provides keyboard-first TUI data exploration tool with multiple dataset support,
 filtering, aggregation, and export capabilities.
 """
-
 
 import typer
 
@@ -51,6 +49,7 @@ def load(
 
     Args:
         paths: List of file paths or URLs to load automatically
+
     """
     # Initialize session
     session = DatasetSession()

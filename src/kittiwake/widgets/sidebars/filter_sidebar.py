@@ -45,6 +45,7 @@ class FilterSidebar(VerticalScroll):
 
         Args:
             columns: List of column names for the dropdown
+
         """
         super().__init__(id="filter_sidebar", classes="sidebar hidden", **kwargs)
         self.columns: list[str] = columns or []

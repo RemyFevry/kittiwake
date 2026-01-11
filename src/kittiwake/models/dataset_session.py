@@ -1,9 +1,19 @@
 """Session management for multiple datasets."""
 
 from dataclasses import dataclass, field
+from enum import Enum
 from uuid import UUID
 
 from .dataset import Dataset
+
+
+class DatasetAddResult(Enum):
+    """Result status when adding a dataset."""
+
+    SUCCESS = "success"
+    WARNING_8_DATASETS = "warning_8"
+    WARNING_9_DATASETS = "warning_9"
+    ERROR_AT_LIMIT = "error_limit"
 
 
 @dataclass
@@ -16,10 +26,21 @@ class DatasetSession:
     split_pane_enabled: bool = False
     split_pane_datasets: tuple[UUID, UUID] | None = None
 
-    def add_dataset(self, dataset: Dataset) -> bool:
-        """Add dataset to session."""
-        if len(self.datasets) >= self.max_datasets:
-            return False
+    def add_dataset(self, dataset: Dataset) -> DatasetAddResult:
+        """Add dataset to session with limit enforcement.
+
+        Args:
+            dataset: Dataset to add
+
+        Returns:
+            DatasetAddResult indicating success, warning, or error status
+
+        """
+        current_count = len(self.datasets)
+
+        # Reject if at max capacity
+        if current_count >= self.max_datasets:
+            return DatasetAddResult.ERROR_AT_LIMIT
 
         # Check for name conflicts
         names = [d.name for d in self.datasets]
@@ -36,7 +57,14 @@ class DatasetSession:
         if self.active_dataset_id is None:
             self.set_active_dataset(dataset.id)
 
-        return True
+        # Return status based on new count
+        new_count = len(self.datasets)
+        if new_count == 8:
+            return DatasetAddResult.WARNING_8_DATASETS
+        elif new_count == 9:
+            return DatasetAddResult.WARNING_9_DATASETS
+        else:
+            return DatasetAddResult.SUCCESS
 
     def remove_dataset(self, dataset_id: UUID) -> None:
         """Remove dataset from session."""

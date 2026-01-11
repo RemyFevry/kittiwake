@@ -45,7 +45,9 @@ class TestAppNotifyError:
     def test_notify_error_clipboard_failure(self, app):
         """Test notify_error handles clipboard failure gracefully."""
         # Mock clipboard to raise an exception
-        app.copy_to_clipboard = MagicMock(side_effect=Exception("Clipboard unavailable"))
+        app.copy_to_clipboard = MagicMock(
+            side_effect=Exception("Clipboard unavailable")
+        )
         app.notify = MagicMock()
 
         error_msg = "Test error message"
