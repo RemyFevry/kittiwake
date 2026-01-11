@@ -76,3 +76,4 @@ cover/
 .kittiwake/cache/
 .kittiwake/workflows/
 .analyses.db
+.claude/settings.local.json
