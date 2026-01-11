@@ -1,206 +1,179 @@
+---
+
+description: "Task list for Modern Interactive TUI Design feature implementation"
+---
+
 # Tasks: Modern Interactive TUI Design
 
 **Input**: Design documents from `/specs/002-modern-tui-design/`
-**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/
+**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: Tests are NOT explicitly requested in the specification, so test tasks are omitted per template guidelines.
+**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
-- **[Story]**: Which user story this task belongs to (e.g., US1, US2)
+- **[Story]**: Which user story this belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
+
+## Path Conventions
+
+- **Single project**: `src/`, `tests/` at repository root
+- **Web app**: `backend/src/`, `frontend/src/`
+- **Mobile**: `api/src/`, `ios/src/` or `android/src/`
+- Paths shown below assume single project - adjust based on plan.md structure
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: Create directory structure for new visual design subsystems
+**Purpose**: Project initialization and basic structure
 
-- [X] T001 Create themes directory structure at src/kittiwake/ui/themes/ with __init__.py
-- [X] T002 Create animation directory structure at src/kittiwake/ui/animation/ with __init__.py
-- [X] T003 Create feedback directory structure at src/kittiwake/ui/feedback/ with __init__.py
-- [X] T004 Create accessibility directory structure at src/kittiwake/ui/accessibility/ with __init__.py
-- [X] T005 Add coloraide>=3.0.0 dependency to pyproject.toml for contrast validation
+- [ ] T001 Create theme management directory structure in src/kittiwake/ui/themes/
+- [ ] T002 Create animation system directory structure in src/kittiwake/ui/animation/
+- [ ] T003 [P] Create visual feedback system directory structure in src/kittiwake/ui/feedback/
+- [ ] T004 [P] Create accessibility features directory structure in src/kittiwake/ui/accessibility/
+- [ ] T005 [P] Create enhanced widgets directory structure in src/kittiwake/ui/widgets/
+- [ ] T006 Install coloraide library for WCAG contrast validation
+- [ ] T007 Configure pytest with Textual testing utilities
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: Core theme and color system that ALL user stories depend on
+**Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [X] T006 Implement ColorPalette class in src/kittiwake/ui/themes/colors.py with 3-tier palette support (true color, 256-color, 16-color)
-- [X] T007 Implement TypographyConfig class in src/kittiwake/ui/themes/config.py with font weight and alignment settings
-- [X] T008 Implement SpacingConfig class in src/kittiwake/ui/themes/config.py with consistent spacing scale
-- [X] T009 Implement ThemeConfig class in src/kittiwake/ui/themes/config.py integrating ColorPalette, TypographyConfig, SpacingConfig
-- [X] T010 [P] Implement light theme preset in src/kittiwake/ui/themes/presets.py with WCAG AA validated colors
-- [X] T011 [P] Implement dark theme preset in src/kittiwake/ui/themes/presets.py with WCAG AA validated colors
-- [X] T012 Implement theme loader function in src/kittiwake/ui/themes/__init__.py with color system detection
-- [X] T013 [P] Implement WCAG contrast validation function in src/kittiwake/ui/accessibility/contrast.py using coloraide library
-- [X] T014 [P] Implement reduced motion detection in src/kittiwake/ui/accessibility/reduced_motion.py checking REDUCE_MOTION and NO_COLOR env vars
-- [X] T015 Integrate ThemeConfig into main app in src/kittiwake/__init__.py with automatic theme loading on startup
+- [ ] T008 [P] Implement ThemeConfig data model in src/kittiwake/ui/themes/config.py
+- [ ] T009 [P] Implement ColorPalette data model in src/kittiwake/ui/themes/colors.py
+- [ ] T010 [P] Implement TypographyConfig and SpacingConfig in src/kittiwake/ui/themes/config.py
+- [ ] T011 [P] Implement ThemeManager singleton in src/kittiwake/ui/themes/__init__.py
+- [ ] T012 [P] Implement AnimationState data model in src/kittiwake/ui/animation/engine.py
+- [ ] T013 [P] Implement AnimationEngine singleton in src/kittiwake/ui/animation/engine.py
+- [ ] T014 [P] Implement EasingFunctions in src/kittiwake/ui/animation/easing.py
+- [ ] T015 [P] Implement ContextualInfo data model in src/kittiwake/ui/feedback/contextual.py
+- [ ] T016 [P] Implement VisualFeedback data model in src/kittiwake/ui/feedback/notifications.py
+- [ ] T017 [P] Implement ProgressIndicator data model in src/kittiwake/ui/feedback/progress.py
+- [ ] T018 [P] Implement reduced motion detection in src/kittiwake/ui/accessibility/reduced_motion.py
+- [ ] T019 [P] Implement contrast validation utility in src/kittiwake/ui/accessibility/contrast.py
+- [ ] T020 [P] Implement color-blind mode utilities in src/kittiwake/ui/accessibility/color_blind.py
+- [ ] T021 Implement theme persistence to config file in src/kittiwake/ui/themes/config.py
+- [ ] T022 Implement terminal color capability detection in src/kittiwake/ui/themes/config.py
+- [ ] T023 Implement FPS monitoring for adaptive animations in src/kittiwake/ui/animation/engine.py
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
 ---
 
-## Phase 3: User Story 1 - Responsive and Fluid Animations (Priority: P1) 🎯 MVP
+## Phase 3: User Story 1 - Visual Theme Customization (Priority: P1) 🎯 MVP
 
-**Goal**: Every interaction provides immediate visual feedback through smooth animations and transitions with 60fps target performance
+**Goal**: Allow users to switch between light and dark themes with WCAG AA compliant contrast ratios
 
-**Independent Test**: Perform various UI interactions (opening modals, switching tabs, scrolling data, applying operations) and verify each has appropriate animation timing (100-300ms) and visual feedback without lag
+**Independent Test**: Can be fully tested by launching the app, pressing Ctrl+T to toggle between light and dark themes, and verifying that all UI components update with appropriate colors that meet WCAG AA contrast standards (4.5:1 for normal text).
 
 ### Implementation for User Story 1
 
-- [X] T016 [P] [US1] Implement AnimationState class in src/kittiwake/ui/animation/engine.py with id, target_widget, property, duration, easing, progress tracking
-- [X] T017 [P] [US1] Implement easing functions wrapper in src/kittiwake/ui/animation/easing.py mapping to Textual's built-in easings
-- [X] T018 [US1] Implement AnimationEngine singleton in src/kittiwake/ui/animation/engine.py managing concurrent animations (max 20)
-- [X] T019 [US1] Implement common transition patterns in src/kittiwake/ui/animation/transitions.py (fade_in, fade_out, slide_in, slide_out, cross_fade)
-- [X] T020 [US1] Enhance existing DataTable widget in src/kittiwake/ui/widgets/data_table.py with smooth row highlighting animations (<100ms)
-- [X] T021 [US1] Add modal slide-in animation to existing modal base in src/kittiwake/ui/widgets/modal.py with fade + slide effect (200ms total)
-- [X] T022 [US1] Add dataset tab transition animations in src/kittiwake/ui/widgets/data_table.py with cross-fade effect (150ms)
-- [X] T023 [US1] Add filter operation data update animations in src/kittiwake/ui/widgets/data_table.py with fade in/out for rows
-- [X] T024 [US1] Add smooth scrollbar animation in src/kittiwake/ui/widgets/data_table.py maintaining 60fps performance
-- [X] T025 [US1] Add terminal resize layout animation in src/kittiwake/ui/widgets/data_table.py with smooth repositioning (150ms)
-- [X] T026 [US1] Implement performance monitor in src/kittiwake/ui/animation/engine.py tracking frame times in ring buffer
-- [X] T027 [US1] Implement adaptive animation system in src/kittiwake/ui/animation/engine.py auto-disabling decorative animations at <30fps
+- [ ] T024 [P] [US1] Create light theme preset in src/kittiwake/ui/themes/presets.py
+- [ ] T025 [P] [US1] Create dark theme preset in src/kittiwake/ui/themes/presets.py
+- [ ] T026 [US1] Implement theme switching via Ctrl+T in KittiwakeApp
+- [ ] T027 [US1] Implement smooth theme transition animation (300ms) in src/kittiwake/ui/themes/__init__.py
+- [ ] T028 [US1] Implement WCAG AA contrast validation for all theme colors
+- [ ] T029 [US1] Implement automatic theme detection based on terminal color capability
+- [ ] T030 [US1] Implement theme persistence to ~/.kittiwake/config.json
+- [ ] T031 [US1] Apply theme colors to existing DatasetTable widget
+- [ ] T032 [US1] Apply theme colors to existing sidebar widgets
+- [ ] T033 [US1] Apply theme colors to existing modal dialogs
 
-**Checkpoint**: At this point, all UI interactions should have smooth animations with visual feedback
+**Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
 ---
 
-## Phase 4: User Story 2 - Rich Visual Hierarchy and Typography (Priority: P1)
+## Phase 4: User Story 2 - Smooth Visual Feedback (Priority: P1)
 
-**Goal**: Interface clearly communicates information hierarchy through visual design with WCAG AA compliant colors and consistent typography
+**Goal**: Provide smooth animations and visual feedback for UI interactions at 60fps
 
-**Independent Test**: Load sample data and verify visual distinction between headers/content, appropriate alignment for different data types, readable contrast ratios (WCAG AA minimum 4.5:1), and consistent typography across all interface elements
+**Independent Test**: Can be tested by performing common actions (opening sidebars, switching tabs, showing modals) and verifying animations run smoothly at 60fps, or gracefully degrade if performance drops below 30fps.
 
 ### Implementation for User Story 2
 
-- [X] T028 [P] [US2] Apply bold weight to column headers in src/kittiwake/ui/widgets/data_table.py using TypographyConfig
-- [X] T029 [P] [US2] Implement data type detection and alignment in src/kittiwake/ui/widgets/data_table.py (numeric=right, text=left, dates=left)
-- [X] T030 [US2] Apply color palette to existing status bar in src/kittiwake/ui/widgets/status_bar.py using ThemeConfig semantic colors
-- [X] T031 [US2] Add visual panel borders in src/kittiwake/ui/widgets/data_table.py using border color from palette
-- [X] T032 [US2] Implement status indicator styling in src/kittiwake/ui/widgets/status_bar.py using color + symbols (error=red+✗, success=green+✓, warning=yellow+⚠)
-- [X] T033 [US2] Apply spacing config to all widgets in src/kittiwake/ui/widgets/ using SpacingConfig (1 cell vertical, 2 cells horizontal padding)
-- [X] T034 [US2] Add theme switching command in src/kittiwake/__main__.py with keyboard shortcut to toggle light/dark themes
-- [X] T035 [US2] Implement theme validation on load in src/kittiwake/ui/themes/config.py verifying all contrast ratios meet WCAG AA
+- [ ] T034 [P] [US2] Implement sidebar slide animation (ease-out, 200-250ms) in src/kittiwake/ui/widgets/modal.py
+- [ ] T035 [P] [US2] Implement tab switching fade animation (200ms) in src/kittiwake/ui/widgets/data_table.py
+- [ ] T036 [US2] Implement modal open animation (fade + scale 90%→100%, 150ms) in src/kittiwake/ui/widgets/modal.py
+- [ ] T037 [US2] Implement animation performance monitoring and degradation logic
+- [ ] T038 [US2] Implement reduced motion support via environment variable detection
+- [ ] T039 [US2] Implement animation cancellation to prevent queue buildup
+- [ ] T040 [US2] Apply animations to existing sidebar open/close interactions
+- [ ] T041 [US2] Apply animations to existing modal open/close interactions
+- [ ] T042 [US2] Apply animations to existing tab switching interactions
 
-**Checkpoint**: Interface should have clear visual hierarchy with accessible colors and consistent typography
+**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
 ---
 
-## Phase 5: User Story 3 - Interactive Data Exploration Enhancements (Priority: P2)
+## Phase 5: User Story 3 - Accessible Terminal Compatibility (Priority: P2)
 
-**Goal**: Users see contextual information (tooltips, stats, quick actions, previews) when navigating data cells and column headers
+**Goal**: Ensure app works properly across different terminal capabilities and accessibility needs
 
-**Independent Test**: Navigate to various data cells and column headers, verify contextual information appears appropriately, test quick actions menu functionality, and confirm operation previews display correctly before application
+**Independent Test**: Can be tested by launching the app in terminals with different capabilities (true color, 256-color, 16-color) and with accessibility settings (reduced motion, color-blind modes) and verifying appropriate adaptations occur.
 
 ### Implementation for User Story 3
 
-- [X] T036 [P] [US3] Implement ContextualInfo class in src/kittiwake/ui/feedback/contextual.py with element_type, primary_text, secondary_details, tooltip_content
-- [X] T037 [P] [US3] Implement Position class in src/kittiwake/ui/feedback/contextual.py with smart positioning logic (prefer above, fallback below, edge avoidance)
-- [X] T038 [US3] Implement LRU cache for ContextualInfo in src/kittiwake/ui/feedback/contextual.py (max 100 entries)
-- [X] T039 [US3] Implement tooltip renderer in src/kittiwake/ui/feedback/tooltips.py extending Textual Tooltip with 300ms delay and text wrapping
-- [ ] T040 [US3] Add cell focus handler in src/kittiwake/ui/widgets/data_table.py showing tooltips for truncated content
-- [ ] T041 [US3] Add numeric cell stats calculator in src/kittiwake/ui/widgets/data_table.py computing % of total and rank
-- [ ] T042 [US3] Integrate contextual stats display in src/kittiwake/ui/widgets/status_bar.py showing stats for focused numeric cells
-- [ ] T043 [US3] Implement quick actions menu in src/kittiwake/ui/widgets/data_table.py for column headers with data-type-specific operations
-- [ ] T044 [US3] Implement operation preview mode in src/kittiwake/ui/widgets/data_table.py highlighting affected rows before confirmation
-- [ ] T045 [US3] Add preview accept/cancel handlers in src/kittiwake/ui/widgets/data_table.py clearing highlights and applying or reverting operation
+- [ ] T043 [P] [US3] Implement 256-color theme variant in src/kittiwake/ui/themes/colors.py
+- [ ] T044 [P] [US3] Implement 16-color theme variant with high-contrast mode in src/kittiwake/ui/themes/colors.py
+- [ ] T045 [US3] Implement protanopia (red-blind) color palette in src/kittiwake/ui/accessibility/color_blind.py
+- [ ] T046 [US3] Implement deuteranopia (green-blind) color palette in src/kittiwake/ui/accessibility/color_blind.py
+- [ ] T047 [US3] Implement tritanopia (blue-blind) color palette in src/kittiwake/ui/accessibility/color_blind.py
+- [ ] T048 [US3] Implement terminal size detection and warning for <80x24 in src/kittiwake/ui/accessibility/__init__.py
+- [ ] T049 [US3] Implement Unicode support detection and ASCII fallbacks in src/kittiwake/ui/accessibility/__init__.py
+- [ ] T050 [US3] Apply color-blind modes to data type indicators in DatasetTable
+- [ ] T051 [US3] Apply high-contrast mode to 16-color terminals
+- [ ] T052 [US3] Implement accessibility mode persistence to config
 
-**Checkpoint**: Users should see helpful contextual information and previews when exploring data
+**Checkpoint**: All user stories should now be independently functional
 
 ---
 
-## Phase 6: User Story 4 - Modern Layout with Status and Context Awareness (Priority: P2)
+## Phase 6: User Story 4 - Standalone Status Bar Widget (Priority: P2)
 
-**Goal**: Users always have clear context about their current state through status bar, breadcrumbs, progress indicators, and modern spacing
+**Goal**: Extract status bar from DataTable widget into a standalone widget with enhanced functionality
 
-**Independent Test**: Perform various workflows and verify status bar updates correctly, operation breadcrumbs display accurately, progress indicators appear for long operations, and layout spacing feels comfortable and modern
+**Independent Test**: Can be tested by loading a dataset and observing the status bar shows: (1) dataset name and row count in left section, (2) contextual keyboard shortcuts and operation state in middle section that change based on current mode, (3) current row/column position in right section.
 
 ### Implementation for User Story 4
 
-- [ ] T046 [P] [US4] Enhance status bar in src/kittiwake/ui/widgets/status_bar.py to show dataset name, row counts, and filter status
-- [ ] T047 [P] [US4] Implement breadcrumbs widget in src/kittiwake/ui/widgets/breadcrumbs.py showing operation sequence trail
-- [ ] T048 [US4] Implement ProgressIndicator class in src/kittiwake/ui/feedback/progress.py with determinate/indeterminate modes, ETA calculation, cancellation support
-- [ ] T049 [US4] Create OperationProgress composite widget in src/kittiwake/ui/feedback/progress.py with description, ProgressBar, ETA, and cancel shortcut
-- [ ] T050 [US4] Implement progress manager in src/kittiwake/ui/feedback/progress.py with show/update/hide functions using call_from_thread
-- [ ] T051 [US4] Add contextual keyboard shortcuts display in src/kittiwake/ui/widgets/status_bar.py updating based on current mode
-- [ ] T052 [US4] Integrate progress indicators in src/kittiwake/operations/ for all operations >500ms with descriptive messages
-- [ ] T053 [US4] Add ETA calculation in src/kittiwake/ui/feedback/progress.py for operations >3s based on progress rate
-- [ ] T054 [US4] Integrate breadcrumbs widget in src/kittiwake/__main__.py updating when operations are applied
-- [ ] T055 [US4] Apply consistent spacing from SpacingConfig to main layout in src/kittiwake/__main__.py (minimum 1 vertical, 2 horizontal cells)
+- [ ] T053 [US4] Extract StatusBar widget from DataTable into src/kittiwake/ui/widgets/status_bar.py
+- [ ] T054 [US4] Implement three-section layout (dataset info, shortcuts/op state, cursor pos) in StatusBar
+- [ ] T055 [US4] Implement dataset info section with name, total rows, filtered rows in StatusBar
+- [ ] T056 [US4] Implement contextual shortcuts section that updates based on UI mode in StatusBar
+- [ ] T057 [US4] Implement cursor position section showing current row/column in StatusBar
+- [ ] T058 [US4] Implement operation state indicators (Preview, Applying..., Complete, Error) in StatusBar
+- [ ] T059 [US4] Implement auto-clear behavior (2s for Complete, 5s for Error) in StatusBar
+- [ ] T060 [US4] Implement progress display during long-running operations in StatusBar
+- [ ] T061 [US4] Apply theme colors to StatusBar widget
+- [ ] T062 [US4] Integrate StatusBar with existing UI components and operation workflow
 
-**Checkpoint**: Users should always know their context with clear status, breadcrumbs, and progress feedback
-
----
-
-## Phase 7: User Story 5 - Elegant Modal Dialogs and Forms (Priority: P3)
-
-**Goal**: Modal dialogs are centered with shadows, have clear visual hierarchy, smooth keyboard navigation, inline validation, and distinct primary actions
-
-**Independent Test**: Open various modal dialogs (filter, aggregate, join), test form field navigation, trigger validation errors, and verify clear visual hierarchy and helpful error messages
-
-### Implementation for User Story 5
-
-- [ ] T056 [US5] Implement ModalDialog base class in src/kittiwake/ui/widgets/modal.py extending Screen with center alignment, shadow, and dimmed background
-- [ ] T057 [US5] Add modal slide-in animation to ModalDialog in src/kittiwake/ui/widgets/modal.py with fade + slide from center (200ms total)
-- [ ] T058 [US5] Implement form field styling in src/kittiwake/ui/widgets/modal.py with labels, placeholder text, and focus highlighting
-- [ ] T059 [US5] Add inline validation to ModalDialog in src/kittiwake/ui/widgets/modal.py with red error messages and specific guidance
-- [ ] T060 [US5] Implement smooth Tab/Shift+Tab navigation in ModalDialog in src/kittiwake/ui/widgets/modal.py with visible focus indicators
-- [ ] T061 [US5] Style primary/cancel action buttons in ModalDialog in src/kittiwake/ui/widgets/modal.py with distinct colors and positions
-- [ ] T062 [US5] Add ESC key handler to ModalDialog in src/kittiwake/ui/widgets/modal.py for cancel action
-- [ ] T063 [US5] Implement scrollable modal support in ModalDialog in src/kittiwake/ui/widgets/modal.py for content exceeding terminal height
-- [ ] T064 [US5] Add field tooltips to ModalDialog in src/kittiwake/ui/widgets/modal.py with helpful context for operators and formats
-- [ ] T065 [US5] Update existing filter/aggregate/join modals to extend new ModalDialog base class
-
-**Checkpoint**: Modal dialogs should be elegant, intuitive, and keyboard-friendly
+**Checkpoint**: All user stories should now be independently functional
 
 ---
 
-## Phase 8: User Story 6 - Data Visualization and Inline Charts (Priority: P4)
+## Phase 7: Polish & Cross-Cutting Concerns
 
-**Goal**: Numeric columns show sparklines in headers, aggregations show inline bar charts, pivot tables support heat-maps, visualizations can be toggled and degrade gracefully
+**Purpose**: Improvements that affect multiple user stories
 
-**Independent Test**: Load numeric data and verify sparklines appear in headers, create aggregations and verify inline bar charts, create pivot table and test heat-map visualization, confirm visualizations can be toggled
-
-### Implementation for User Story 6
-
-- [ ] T066 [P] [US6] Implement sparkline generator in src/kittiwake/ui/widgets/data_table.py using Unicode block characters (▁▂▃▄▅▆▇█) with 8-bin histogram
-- [ ] T067 [P] [US6] Implement ASCII sparkline fallback in src/kittiwake/ui/widgets/data_table.py using (_-=^) for non-Unicode terminals
-- [ ] T068 [P] [US6] Implement inline bar chart renderer in src/kittiwake/ui/widgets/data_table.py for aggregation results showing relative magnitude
-- [ ] T069 [US6] Implement heat-map coloring in src/kittiwake/ui/widgets/data_table.py for pivot tables with blue→white→red gradient
-- [ ] T070 [US6] Add Unicode support detection in src/kittiwake/ui/widgets/data_table.py checking console.encoding
-- [ ] T071 [US6] Implement ASCII density fallback in src/kittiwake/ui/widgets/data_table.py using ( .:+=X#) for heat-maps
-- [ ] T072 [US6] Add sparklines to column headers in src/kittiwake/ui/widgets/data_table.py for numeric columns
-- [ ] T073 [US6] Add visualization toggle command in src/kittiwake/__main__.py with keyboard shortcut to show/hide visualizations
-- [ ] T074 [US6] Implement 16-color mode degradation in src/kittiwake/ui/widgets/data_table.py using background colors only for heat-maps
-- [ ] T075 [US6] Implement narrow column handling in src/kittiwake/ui/widgets/data_table.py scaling down or hiding sparklines gracefully
-
-**Checkpoint**: Data visualizations should enhance comprehension and degrade gracefully across terminals
-
----
-
-## Phase 9: Polish & Cross-Cutting Concerns
-
-**Purpose**: Improvements that affect multiple user stories and final quality enhancements
-
-- [ ] T076 [P] Implement VisualFeedback class in src/kittiwake/ui/feedback/notifications.py with highlight, flash, pulse, shake effects
-- [ ] T077 [P] Implement feedback engine in src/kittiwake/ui/feedback/notifications.py managing concurrent feedback (max 10)
-- [ ] T078 [P] Add visual feedback to user actions in src/kittiwake/ui/widgets/ (row selection=highlight, save success=green flash, validation error=shake)
-- [ ] T079 [P] Implement color-blind palette generator in src/kittiwake/ui/accessibility/color_blind.py for protanopia, deuteranopia, tritanopia
-- [ ] T080 [P] Add minimum terminal size check in src/kittiwake/__main__.py displaying warning for <80x24 terminals
-- [ ] T081 [P] Add terminal resize adaptation in src/kittiwake/__main__.py triggering color system re-detection
-- [ ] T082 [P] Implement status bar truncation in src/kittiwake/ui/widgets/status_bar.py with ellipsis and expand shortcut
-- [ ] T083 [P] Add tooltip position clamping in src/kittiwake/ui/feedback/tooltips.py ensuring tooltips stay within terminal bounds
-- [ ] T084 [P] Add KITTIWAKE_FORCE_ANIMATIONS env var support in src/kittiwake/ui/animation/engine.py allowing user override
-- [ ] T085 Validate quickstart.md examples by running sample code from documentation
-- [ ] T086 Performance test animations with large datasets ensuring 60fps maintained
-- [ ] T087 Accessibility audit of all color combinations verifying WCAG AA compliance
-- [ ] T088 Terminal compatibility testing across true color, 256-color, and 16-color terminals
+- [ ] T063 [P] Update documentation with theme customization guide in docs/
+- [ ] T064 [P] Update documentation with animation system guide in docs/
+- [ ] T065 [P] Update documentation with accessibility features guide in docs/
+- [ ] T066 [P] Add unit tests for ColorPalette contrast validation in tests/ui/test_themes.py
+- [ ] T067 [P] Add unit tests for AnimationState FPS monitoring in tests/ui/test_animations.py
+- [ ] T068 [P] Add unit tests for StatusBar functionality in tests/ui/test_feedback.py
+- [ ] T069 [P] Add integration tests for theme switching in tests/ui/test_themes.py
+- [ ] T070 [P] Add integration tests for animation degradation in tests/ui/test_animations.py
+- [ ] T071 [P] Add accessibility integration tests in tests/ui/test_accessibility.py
+- [ ] T072 [P] Run quickstart.md validation scenarios
+- [ ] T073 Code cleanup and refactoring across all new modules
+- [ ] T074 Performance optimization across all stories
+- [ ] T075 Security hardening for config file access
 
 ---
 
@@ -210,130 +183,88 @@
 
 - **Setup (Phase 1)**: No dependencies - can start immediately
 - **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
-- **User Stories (Phase 3-8)**: All depend on Foundational phase completion
+- **User Stories (Phase 3+)**: All depend on Foundational phase completion
   - User stories can then proceed in parallel (if staffed)
-  - Or sequentially in priority order (P1 → P1 → P2 → P2 → P3 → P4)
-- **Polish (Phase 9)**: Depends on desired user stories being complete
+  - Or sequentially in priority order (P1 → P2 → P3)
+- **Polish (Final Phase)**: Depends on all desired user stories being complete
 
 ### User Story Dependencies
 
-- **User Story 1 (P1 - Animations)**: Depends on Foundational (Phase 2) - No dependencies on other stories - RECOMMENDED MVP
-- **User Story 2 (P1 - Typography)**: Depends on Foundational (Phase 2) - No dependencies on other stories - RECOMMENDED MVP
-- **User Story 3 (P2 - Interactive)**: Depends on Foundational (Phase 2) and US1 (animations for tooltips) - Should integrate with US1
-- **User Story 4 (P2 - Context)**: Depends on Foundational (Phase 2) and US1 (animations for progress) - Should integrate with US1
-- **User Story 5 (P3 - Modals)**: Depends on Foundational (Phase 2) and US1 (modal animations) - Should integrate with US1/US2
-- **User Story 6 (P4 - Visualizations)**: Depends on Foundational (Phase 2) and US2 (typography for charts) - Can be added last
+- **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories
+- **User Story 2 (P2)**: Can start after Foundational (Phase 2) - May integrate with US1 but should be independently testable
+- **User Story 3 (P3)**: Can start after Foundational (Phase 2) - Builds on theme system from US1
+- **User Story 4 (P4)**: Can start after Foundational (Phase 2) - May use theme system from US1
 
 ### Within Each User Story
 
-- Tasks flow: Classes/entities → Integration → Enhancements → Edge cases
-- Parallel tasks [P] can run concurrently (different files)
-- Sequential tasks must wait for dependencies
+- Core implementation before UI integration
 - Story complete before moving to next priority
 
 ### Parallel Opportunities
 
-- **Phase 1 (Setup)**: All 5 tasks can run in parallel (creating different directories)
-- **Phase 2 (Foundational)**: Tasks T010-T011 (presets), T013-T014 (accessibility) can run in parallel after T006-T009 complete
-- **Phase 3 (US1)**: Tasks T016-T017 (animation classes), T020-T025 (widget enhancements) can run in parallel after T018-T019 complete
-- **Phase 4 (US2)**: Tasks T028-T029 (typography), T030-T032 (colors) can run in parallel
-- **Phase 5 (US3)**: Tasks T036-T038 (classes), T039-T041 (integration) can run in parallel
-- **Phase 6 (US4)**: Tasks T046-T047 (widgets), T048-T050 (progress) can run in parallel
-- **Phase 7 (US5)**: Tasks within modal enhancements can run after T056 completes
-- **Phase 8 (US6)**: Tasks T066-T068 (visualization renderers) can run in parallel
-- **Phase 9 (Polish)**: Most polish tasks marked [P] can run in parallel
+- All Setup tasks marked [P] can run in parallel
+- All Foundational tasks marked [P] can run in parallel (within Phase 2)
+- Once Foundational phase completes, all user stories can start in parallel (if team capacity allows)
+- Models within a story marked [P] can run in parallel
+- Different user stories can be worked on in parallel by different team members
 
 ---
 
-## Parallel Example: User Story 1 (Animations)
+## Parallel Example: User Story 1
 
 ```bash
-# After T018-T019 complete, launch widget enhancements in parallel:
-Task T020: "Enhance DataTable with row highlighting"
-Task T021: "Add modal slide-in animation"
-Task T022: "Add dataset tab transitions"
-Task T023: "Add filter operation animations"
-Task T024: "Add smooth scrollbar animation"
-Task T025: "Add terminal resize animation"
+# Launch all theme preset implementations together:
+Task: "Create light theme preset in src/kittiwake/ui/themes/presets.py"
+Task: "Create dark theme preset in src/kittiwake/ui/themes/presets.py"
 
-# These 6 tasks work on different animation integration points
+# Launch all theme application tasks together:
+Task: "Apply theme colors to existing DatasetTable widget"
+Task: "Apply theme colors to existing sidebar widgets"
+Task: "Apply theme colors to existing modal dialogs"
 ```
 
 ---
 
 ## Implementation Strategy
 
-### MVP First (User Stories 1 + 2 Only - Both P1)
+### MVP First (User Stories 1 & 2 Only)
 
-1. Complete Phase 1: Setup (5 tasks)
-2. Complete Phase 2: Foundational (10 tasks - CRITICAL)
-3. Complete Phase 3: User Story 1 - Animations (12 tasks)
-4. Complete Phase 4: User Story 2 - Typography (8 tasks)
-5. **STOP and VALIDATE**: Test smooth animations and visual hierarchy independently
-6. Deploy/demo modern TUI with animations and typography
+1. Complete Phase 1: Setup
+2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
+3. Complete Phase 3: User Story 1 (Theme Customization)
+4. Complete Phase 4: User Story 2 (Smooth Visual Feedback)
+5. **STOP and VALIDATE**: Test US1 and US2 together independently
+6. Deploy/demo if ready
 
-**Result**: MVP delivers core visual modernization (smooth animations + clear hierarchy) - most impactful user stories
+### Incremental Delivery
 
-### Incremental Delivery (Recommended)
-
-1. **Foundation** (Phases 1-2): Setup + themes/colors → 15 tasks
-2. **MVP** (Phases 3-4): US1 (animations) + US2 (typography) → 20 tasks → Deploy!
-3. **Interactive** (Phase 5): US3 (tooltips, stats, previews) → 10 tasks → Deploy!
-4. **Context** (Phase 6): US4 (status, breadcrumbs, progress) → 10 tasks → Deploy!
-5. **Modals** (Phase 7): US5 (elegant dialogs) → 10 tasks → Deploy!
-6. **Visualizations** (Phase 8): US6 (sparklines, charts) → 10 tasks → Deploy!
-7. **Polish** (Phase 9): Final enhancements → 13 tasks → Final deploy!
-
-Each deployment adds value without breaking previous functionality.
+1. Complete Setup + Foundational → Foundation ready
+2. Add User Story 1 → Test independently → Deploy/Demo
+3. Add User Story 2 → Test independently → Deploy/Demo
+4. Add User Story 3 → Test independently → Deploy/Demo
+5. Add User Story 4 → Test independently → Deploy/Demo
+6. Each story adds value without breaking previous stories
 
 ### Parallel Team Strategy
 
-With multiple developers after Foundational phase completes:
+With multiple developers:
 
-- **Developer A**: User Story 1 (Animations) - 12 tasks
-- **Developer B**: User Story 2 (Typography) - 8 tasks
-- **Developer C**: User Story 3 (Interactive) - 10 tasks (depends on US1 for animations)
-
-Stories 1 and 2 can proceed immediately in parallel. Story 3 can start after Story 1 completes animations infrastructure.
-
----
-
-## Task Summary
-
-**Total Tasks**: 88 tasks
-
-**By Phase**:
-- Phase 1 (Setup): 5 tasks
-- Phase 2 (Foundational): 10 tasks - BLOCKS all user stories
-- Phase 3 (US1 - Animations): 12 tasks
-- Phase 4 (US2 - Typography): 8 tasks
-- Phase 5 (US3 - Interactive): 10 tasks
-- Phase 6 (US4 - Context): 10 tasks
-- Phase 7 (US5 - Modals): 10 tasks
-- Phase 8 (US6 - Visualizations): 10 tasks
-- Phase 9 (Polish): 13 tasks
-
-**Parallel Opportunities**: 35 tasks marked [P] can run in parallel within their phase
-
-**MVP Scope**: Phases 1-4 (US1 + US2) = 35 tasks delivers smooth animations and clear visual hierarchy
-
-**Independent Tests Per Story**:
-- US1: Perform UI interactions, verify animation timing and visual feedback
-- US2: Load data, verify typography, alignment, contrast ratios, and colors
-- US3: Navigate cells/headers, verify tooltips, stats, quick actions, previews
-- US4: Perform workflows, verify status bar, breadcrumbs, progress indicators
-- US5: Open modals, verify styling, navigation, validation, button distinction
-- US6: Load numeric data, verify sparklines, bar charts, heat-maps, toggle
+1. Team completes Setup + Foundational together
+2. Once Foundational is done:
+   - Developer A: User Story 1
+   - Developer B: User Story 2
+   - Developer C: User Story 3
+   - Developer D: User Story 4
+3. Stories complete and integrate independently
 
 ---
 
 ## Notes
 
-- All tasks follow strict checklist format: `- [ ] [ID] [P?] [Story?] Description with file path`
-- [P] tasks work on different files and can run concurrently
-- [Story] labels map tasks to specific user stories from spec.md
-- Each user story is independently testable per acceptance scenarios
-- Tests are NOT included (not requested in specification)
-- Foundation phase (Phase 2) must complete before any user story work begins
-- Recommended MVP: Complete through Phase 4 (US1 + US2) for maximum impact
-- All timing constraints from spec.md are preserved in task descriptions
+- [P] tasks = different files, no dependencies
+- [Story] label maps task to specific user story for traceability
+- Each user story should be independently completable and testable
+- Verify tests fail before implementing
+- Commit after each task or logical group
+- Stop at any checkpoint to validate story independently
+- Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
