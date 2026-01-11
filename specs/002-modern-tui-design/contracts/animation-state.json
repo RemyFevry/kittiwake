@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://kittiwake.dev/schemas/animation-state.json",
+  "title": "AnimationState",
+  "description": "Tracks ongoing animation state for a single animated property",
+  "type": "object",
+  "required": [
+    "id",
+    "target_widget_id",
+    "property",
+    "start_value",
+    "end_value",
+    "duration",
+    "easing",
+    "elapsed"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique animation identifier"
+    },
+    "target_widget_id": {
+      "type": "string",
+      "description": "ID of widget being animated (widget reference not serializable)"
+    },
+    "property": {
+      "type": "string",
+      "description": "Property name being animated",
+      "examples": ["opacity", "offset_x", "offset_y", "scale"]
+    },
+    "start_value": {
+      "type": "number",
+      "description": "Starting value"
+    },
+    "end_value": {
+      "type": "number",
+      "description": "Target value"
+    },
+    "duration": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Animation duration in seconds"
+    },
+    "easing": {
+      "type": "string",
+      "enum": [
+        "linear",
+        "in_cubic",
+        "out_cubic",
+        "in_out_cubic",
+        "in_quad",
+        "out_quad",
+        "in_out_quad",
+        "in_expo",
+        "out_expo",
+        "in_out_expo",
+        "in_bounce",
+        "out_bounce",
+        "in_out_bounce"
+      ],
+      "description": "Easing function name (Textual built-in functions)"
+    },
+    "elapsed": {
+      "type": "number",
+      "minimum": 0.0,
+      "description": "Time elapsed in seconds"
+    },
+    "progress": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Computed completion percentage (0.0-1.0)",
+      "readOnly": true
+    },
+    "on_complete": {
+      "type": "string",
+      "description": "Callback function name (optional, not serializable as function)",
+      "examples": ["fade_complete", "slide_complete"]
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,234 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://kittiwake.dev/schemas/theme-config.json",
+  "title": "ThemeConfig",
+  "description": "Complete visual theme configuration for kittiwake TUI",
+  "type": "object",
+  "required": [
+    "name",
+    "color_system",
+    "palette",
+    "typography",
+    "spacing",
+    "animation_enabled",
+    "animation_duration_scale",
+    "reduced_motion"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "enum": ["light", "dark", "custom"],
+      "description": "Theme identifier"
+    },
+    "color_system": {
+      "type": "string",
+      "enum": ["TRUECOLOR", "STANDARD", "EIGHT_BIT", "LEGACY_WINDOWS"],
+      "description": "Detected terminal color capability"
+    },
+    "palette": {
+      "$ref": "#/definitions/ColorPalette"
+    },
+    "typography": {
+      "$ref": "#/definitions/TypographyConfig"
+    },
+    "spacing": {
+      "$ref": "#/definitions/SpacingConfig"
+    },
+    "animation_enabled": {
+      "type": "boolean",
+      "description": "Master animation toggle",
+      "default": true
+    },
+    "animation_duration_scale": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 2.0,
+      "description": "Animation speed multiplier (1.0 = normal)",
+      "default": 1.0
+    },
+    "reduced_motion": {
+      "type": "boolean",
+      "description": "Accessibility mode flag (auto-detected from environment)"
+    }
+  },
+  "definitions": {
+    "ColorPalette": {
+      "type": "object",
+      "required": [
+        "primary",
+        "secondary",
+        "background",
+        "surface",
+        "foreground",
+        "muted",
+        "accent",
+        "error",
+        "warning",
+        "success",
+        "border",
+        "shadow"
+      ],
+      "properties": {
+        "primary": {
+          "type": "string",
+          "description": "Main brand/accent color (RGB hex or ANSI name)",
+          "pattern": "^(#[0-9A-Fa-f]{6}|[a-z]+)$"
+        },
+        "secondary": {
+          "type": "string",
+          "description": "Secondary accents",
+          "pattern": "^(#[0-9A-Fa-f]{6}|[a-z]+)$"
+        },
+        "background": {
+          "type": "string",
+          "description": "Default background color",
+          "pattern": "^(#[0-9A-Fa-f]{6}|[a-z]+)$"
+        },
+        "surface": {
+          "type": "string",
+          "description": "Widget surface color",
+          "pattern": "^(#[0-9A-Fa-f]{6}|[a-z]+)$"
+        },
+        "foreground": {
+          "type": "string",
+          "description": "Default text color",
+          "pattern": "^(#[0-9A-Fa-f]{6}|[a-z]+)$"
+        },
+        "muted": {
+          "type": "string",
+          "description": "Dimmed/secondary text",
+          "pattern": "^(#[0-9A-Fa-f]{6}|[a-z]+)$"
+        },
+        "accent": {
+          "type": "string",
+          "description": "Interactive elements",
+          "pattern": "^(#[0-9A-Fa-f]{6}|[a-z]+)$"
+        },
+        "error": {
+          "type": "string",
+          "description": "Error states (red-ish)",
+          "pattern": "^(#[0-9A-Fa-f]{6}|[a-z]+)$"
+        },
+        "warning": {
+          "type": "string",
+          "description": "Warning states (yellow-ish)",
+          "pattern": "^(#[0-9A-Fa-f]{6}|[a-z]+)$"
+        },
+        "success": {
+          "type": "string",
+          "description": "Success states (green-ish)",
+          "pattern": "^(#[0-9A-Fa-f]{6}|[a-z]+)$"
+        },
+        "border": {
+          "type": "string",
+          "description": "Borders and dividers",
+          "pattern": "^(#[0-9A-Fa-f]{6}|[a-z]+)$"
+        },
+        "shadow": {
+          "type": "string",
+          "description": "Shadow overlays (semi-transparent)",
+          "pattern": "^(#[0-9A-Fa-f]{6}|[a-z]+)$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "TypographyConfig": {
+      "type": "object",
+      "required": [
+        "header_weight",
+        "content_weight",
+        "monospace",
+        "text_align_numeric",
+        "text_align_text",
+        "text_align_date"
+      ],
+      "properties": {
+        "header_weight": {
+          "type": "string",
+          "enum": ["normal", "bold"],
+          "description": "Header font weight"
+        },
+        "content_weight": {
+          "type": "string",
+          "enum": ["normal", "bold"],
+          "description": "Content font weight",
+          "default": "normal"
+        },
+        "monospace": {
+          "type": "boolean",
+          "description": "Use monospace for data",
+          "default": true
+        },
+        "text_align_numeric": {
+          "type": "string",
+          "enum": ["left", "right", "center"],
+          "description": "Numeric column alignment",
+          "default": "right"
+        },
+        "text_align_text": {
+          "type": "string",
+          "enum": ["left", "right", "center"],
+          "description": "Text column alignment",
+          "default": "left"
+        },
+        "text_align_date": {
+          "type": "string",
+          "enum": ["left", "right", "center"],
+          "description": "Date column alignment",
+          "default": "left"
+        }
+      },
+      "additionalProperties": false
+    },
+    "SpacingConfig": {
+      "type": "object",
+      "required": [
+        "unit",
+        "padding_vertical",
+        "padding_horizontal",
+        "gap_small",
+        "gap_medium",
+        "gap_large"
+      ],
+      "properties": {
+        "unit": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Base spacing unit (cells)",
+          "default": 1
+        },
+        "padding_vertical": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Vertical padding (units)",
+          "default": 1
+        },
+        "padding_horizontal": {
+          "type": "integer",
+          "minimum": 2,
+          "description": "Horizontal padding (units)",
+          "default": 2
+        },
+        "gap_small": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Small element gap (units)",
+          "default": 1
+        },
+        "gap_medium": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Medium element gap (units)",
+          "default": 2
+        },
+        "gap_large": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Large element gap (units)",
+          "default": 4
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

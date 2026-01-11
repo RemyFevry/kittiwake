@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://kittiwake.dev/schemas/visual-feedback.json",
+  "title": "VisualFeedback",
+  "description": "Represents transient visual feedback for user actions",
+  "type": "object",
+  "required": [
+    "id",
+    "feedback_type",
+    "target_widget_id",
+    "duration",
+    "intensity",
+    "auto_dismiss"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique feedback identifier"
+    },
+    "feedback_type": {
+      "type": "string",
+      "enum": ["highlight", "flash", "pulse", "shake"],
+      "description": "Type of visual feedback effect"
+    },
+    "target_widget_id": {
+      "type": "string",
+      "description": "ID of widget receiving feedback"
+    },
+    "color_override": {
+      "type": "string",
+      "pattern": "^(#[0-9A-Fa-f]{6}|[a-z]+)$",
+      "description": "Custom color (optional, uses theme accent by default)"
+    },
+    "duration": {
+      "type": "number",
+      "minimum": 0.1,
+      "maximum": 2.0,
+      "description": "Feedback duration in seconds"
+    },
+    "intensity": {
+      "type": "number",
+      "minimum": 0.0,
+      "maximum": 1.0,
+      "description": "Effect intensity (affects opacity/saturation)"
+    },
+    "auto_dismiss": {
+      "type": "boolean",
+      "description": "Auto-remove feedback on completion",
+      "default": true
+    }
+  },
+  "additionalProperties": false,
+  "examples": [
+    {
+      "id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "feedback_type": "highlight",
+      "target_widget_id": "data-table-row-42",
+      "duration": 0.3,
+      "intensity": 0.8,
+      "auto_dismiss": true
+    },
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "feedback_type": "flash",
+      "target_widget_id": "save-button",
+      "color_override": "#10b981",
+      "duration": 0.5,
+      "intensity": 1.0,
+      "auto_dismiss": true
+    }
+  ]
+}

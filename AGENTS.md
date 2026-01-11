@@ -6,6 +6,8 @@ Auto-generated from all feature plans. Last updated: 2026-01-08
 - DuckDB database file at `~/.kittiwake/analyses.db` for SavedAnalysis entities (001-tui-data-explorer)
 - Python >=3.13 + extual >=7.0.1, narwhals >=2.15.0, duckdb (for saved analyses storage) (001-tui-data-explorer)
 - DuckDB database file at `~/.kittiwake/analyses.db` for SavedAnalysis entities; local files (CSV, Parquet, JSON) for datasets (001-tui-data-explorer)
+- Python 3.13 + extual>=7.0.1, narwhals>=2.15.0 (003-numerical-column-aggregation)
+- DuckDB (for saved analyses only - not required for this feature) (003-numerical-column-aggregation)
 
 - Python >=3.13 (as specified in constitution and pyproject.toml) (001-tui-data-explorer)
 
@@ -25,8 +27,8 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python >=3.13 (as specified in constitution and pyproject.toml): Follow standard conventions
 
 ## Recent Changes
+- 003-numerical-column-aggregation: Added Python 3.13 + extual>=7.0.1, narwhals>=2.15.0
 - 001-tui-data-explorer: Added Python >=3.13 + extual >=7.0.1, narwhals >=2.15.0, duckdb (for saved analyses storage)
-- 002-column-type-display: Added Python >=3.13 (as specified in constitution and pyproject.toml)
 - 002-column-type-display: Added Python >=3.13 (as specified in constitution and pyproject.toml)
 
 
