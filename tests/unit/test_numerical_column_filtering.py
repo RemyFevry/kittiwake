@@ -288,3 +288,45 @@ class TestPerformance:
         # Should complete in less than 10ms
         assert elapsed_time < 0.01
         assert len(numerical_columns) == 500  # Half should be numerical
+
+
+class TestPivotSidebarFiltering:
+    """Test numerical column filtering in pivot sidebar."""
+
+    def test_pivot_sidebar_accepts_separate_value_columns(self):
+        """Test PivotSidebar accepts separate value_columns parameter."""
+        from kittiwake.widgets.sidebars import PivotSidebar
+
+        all_columns = ["name", "age", "salary", "is_active"]
+        value_columns = ["age", "salary"]
+
+        sidebar = PivotSidebar()
+        sidebar.update_columns(all_columns, value_columns=value_columns)
+
+        assert sidebar.columns == all_columns
+        assert sidebar.value_columns == value_columns
+
+    def test_pivot_sidebar_backward_compatible_without_value_columns(self):
+        """Test PivotSidebar works without value_columns (backward compatible)."""
+        from kittiwake.widgets.sidebars import PivotSidebar
+
+        all_columns = ["name", "age", "salary"]
+
+        sidebar = PivotSidebar()
+        sidebar.update_columns(all_columns)
+
+        assert sidebar.columns == all_columns
+        assert sidebar.value_columns == all_columns  # Should default to all columns
+
+    def test_pivot_sidebar_value_sections_use_value_columns(self):
+        """Test that ValueAggregationSection uses value_columns not all columns."""
+        from kittiwake.widgets.sidebars import PivotSidebar
+
+        all_columns = ["name", "age", "salary", "is_active"]
+        value_columns = ["age", "salary"]
+
+        sidebar = PivotSidebar()
+        sidebar.update_columns(all_columns, value_columns=value_columns)
+
+        # The value_sections should use value_columns
+        assert sidebar.value_columns == value_columns

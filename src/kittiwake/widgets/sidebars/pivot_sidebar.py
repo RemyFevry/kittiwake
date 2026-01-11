@@ -161,6 +161,9 @@ class PivotSidebar(VerticalScroll):
         """
         super().__init__(id="pivot_sidebar", classes="sidebar hidden", **kwargs)
         self.columns: list[str] = columns or []
+        self.value_columns: list[str] = (
+            columns or []
+        )  # Separate list for value dropdowns
         self.callback: Callable[[dict], None] | None = None
         self.value_sections: list[int] = []  # Track section IDs
         self.next_section_id: int = 0
@@ -235,7 +238,7 @@ class PivotSidebar(VerticalScroll):
 
         section = ValueAggregationSection(
             section_id=section_id,
-            columns=self.columns,
+            columns=self.value_columns,  # Use value_columns instead of columns
             on_remove=self._remove_value_section,
         )
 
@@ -413,23 +416,28 @@ class PivotSidebar(VerticalScroll):
 
         self.focus()
 
-    def update_columns(self, columns: list[str]) -> None:
+    def update_columns(
+        self, columns: list[str], value_columns: list[str] | None = None
+    ) -> None:
         """Update available columns for pivot.
 
         Args:
-            columns: New list of column names
+            columns: List of all column names (for index/columns selection)
+            value_columns: List of numerical column names (for values dropdown).
+                          If None, uses all columns (backward compatible).
         """
         self.columns = columns
+        self.value_columns = value_columns if value_columns is not None else columns
         if self.is_mounted:
             self._populate_selection_lists()
-            # Update existing value sections
+            # Update existing value sections with numerical columns only
             for section_id in self.value_sections:
                 try:
                     section = self.query_one(
                         f"#value_section_{section_id}", ValueAggregationSection
                     )
-                    section.available_columns = columns
+                    section.available_columns = self.value_columns
                     select = section.query_one(f"#value_column_{section_id}", Select)
-                    select.set_options([(col, col) for col in columns])
+                    select.set_options([(col, col) for col in self.value_columns])
                 except Exception:
                     pass
